@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kilâri</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: une colonne mobile, navigation fixe en bas, quatre modes (mots, fiches, quiz, grammaire). */
+:root {
+  --bg: #f1f4ef;
+  --surface: #ffffff;
+  --fg: #12251d;
+  --muted: #5b6e64;
+  --line: #d6ddd5;
+  --accent: #1c7a4b;
+  --accent-ink: #ffffff;
+  --sun: #f0b323;
+  --ok: #1c7a4b;
+  --bad: #b8372b;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1a15; --surface: #16261f; --fg: #e6efe9; --muted: #93a79c; --line: #284034;
+    --accent: #4fc487; --accent-ink: #062416; --sun: #f3c24a; --ok: #4fc487; --bad: #ee7a6c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1a15; --surface: #16261f; --fg: #e6efe9; --muted: #93a79c; --line: #284034;
+  --accent: #4fc487; --accent-ink: #062416; --sun: #f3c24a; --ok: #4fc487; --bad: #ee7a6c;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.45;
+  padding-block: 0 88px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+header.top { padding-top: 20px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: 2.1rem; line-height: 1; margin: 0; letter-spacing: -0.02em; }
+h1 span { color: var(--accent); }
+.sub { color: var(--muted); font-size: 0.9rem; }
+.stripe { height: 5px; border-radius: 3px; background: linear-gradient(90deg, var(--accent) 0 34%, var(--sun) 34% 67%, var(--bad) 67% 100%); }
+h2 { font-family: var(--font-display); font-size: 1.25rem; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-size: 1rem; margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.field {
+  width: 100%; padding: 12px 14px; font: inherit; color: var(--fg);
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: 10px;
+}
+select.field { appearance: auto; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.seg { display: inline-flex; border: 1.5px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 9px 14px; font-weight: 700; font-size: 0.9rem; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.chip { flex: none; border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 0.85rem; color: var(--muted); }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.count { color: var(--muted); font-size: 0.85rem; }
+.group { font-family: var(--font-display); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin: 10px 0 2px; }
+.entry { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; display: flex; flex-direction: column; gap: 2px; }
+.entry + .entry { margin-top: 6px; }
+.entry .a { font-size: 0.9rem; color: var(--muted); overflow-wrap: anywhere; }
+.entry .b { font-family: var(--font-display); font-weight: 600; font-size: 1.15rem; color: var(--fg); overflow-wrap: anywhere; }
+.entry .b.is-lari { color: var(--accent); }
+.empty { color: var(--muted); padding: 24px 0; text-align: center; }
+/* fiches */
+.card {
+  width: 100%; min-height: 220px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 18px;
+  padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center;
+  box-shadow: 0 6px 0 var(--line);
+}
+.card .tag { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.card .big { font-family: var(--font-display); font-weight: 800; font-size: 1.9rem; line-height: 1.15; overflow-wrap: anywhere; text-wrap: balance; }
+.card .big.is-lari { color: var(--accent); }
+.card .hint { color: var(--muted); font-size: 0.85rem; }
+.bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.btn { border: 0; border-radius: 10px; padding: 12px 18px; font-weight: 700; background: var(--accent); color: var(--accent-ink); }
+.btn.alt { background: var(--surface); color: var(--fg); border: 1.5px solid var(--line); }
+.btn.bad { background: var(--bad); color: #fff; }
+.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btns .full { grid-column: 1 / -1; }
+/* quiz */
+.opts { display: grid; gap: 8px; }
+.opt { text-align: left; background: var(--surface); border: 1.5px solid var(--line); border-radius: 10px; padding: 13px 14px; font-weight: 700; overflow-wrap: anywhere; }
+.opt.good { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 16%, var(--surface)); }
+.opt.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--surface)); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.q { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; overflow-wrap: anywhere; text-wrap: balance; }
+.score { font-family: var(--font-display); font-size: 3rem; font-weight: 800; color: var(--accent); }
+mark { background: color-mix(in srgb, var(--sun) 55%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
+.hit { line-height: 1.5; overflow-wrap: anywhere; }
+.lg { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-right: 6px; }
+.entry .tog { margin-top: 6px; }
+/* textes */
+.textcard { text-align: left; display: flex; flex-direction: column; gap: 4px; width: 100%; }
+.is-lari-txt { color: var(--accent); font-family: var(--font-display); font-weight: 600; }
+.para { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.pn { align-self: flex-start; font-family: var(--font-display); font-weight: 800; font-size: 0.8rem; color: var(--accent-ink); background: var(--accent); border-radius: 999px; padding: 1px 9px; }
+.lt { margin: 0; font-size: 1.05rem; line-height: 1.65; overflow-wrap: anywhere; }
+.ft { margin: 0; padding: 10px 12px; background: var(--bg); border-left: 4px solid var(--sun); border-radius: 6px; line-height: 1.6; overflow-wrap: anywhere; }
+.tog { align-self: flex-start; border: 1.5px solid var(--line); background: transparent; border-radius: 8px; padding: 6px 12px; font-size: 0.85rem; font-weight: 700; color: var(--accent); }
+/* grammaire */
+.gr { display: grid; gap: 10px; }
+.cls { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: baseline; }
+.pre { font-family: var(--font-display); font-weight: 800; font-size: 1.4rem; color: var(--accent); }
+.ex { background: var(--bg); border-radius: 8px; padding: 8px 10px; }
+.ex b { color: var(--accent); }
+.det { color: var(--muted); font-size: 0.85rem; }
+nav.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--surface); border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+}
+nav.tabs button { border: 0; background: transparent; padding: 10px 2px; border-radius: 10px; font-weight: 700; font-size: 0.78rem; color: var(--muted); }
+nav.tabs button[aria-current="page"] { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); color: var(--accent); }
+@media (prefers-reduced-motion: no-preference) { .bar > i { transition: width .25s; } }
+</style>
+
+<meta name="theme-color" content="#1c7a4b">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Apprendre le lari : dictionnaire, fiches, quiz, textes et grammaire, sans connexion.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>html{color-scheme:light dark}body{margin:0}</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Kil<span>â</span>ri</h1>
+      <div class="sub" id="meta"></div>
+    </div>
+  </header>
+  <div class="stripe" aria-hidden="true"></div>
+  <main id="view"></main>
+</div>
+<nav class="tabs" aria-label="Sections">
+  <button data-act="tab" data-v="mots">Mots</button>
+  <button data-act="tab" data-v="fiches">Fiches</button>
+  <button data-act="tab" data-v="quiz">Quiz</button>
+  <button data-act="tab" data-v="textes">Textes</button>
+  <button data-act="tab" data-v="gram">Grammaire</button>
+</nav>
+
+<script>
+const DATA = {"meta": {"langue": "Lari (Congo-Brazzaville)", "entrees": 379, "categories": 31}, "categories": [{"nom": "Salutations et mots-clés", "entrees": [{"fr": "Oui", "lari": "hê"}, {"fr": "Non", "lari": "kâni"}, {"fr": "Et", "lari": "na"}, {"fr": "Bonjour", "lari": "mboté"}, {"fr": "Merci", "lari": "matôndo, ntôndélé"}, {"fr": "Au revoir", "lari": "sala ou saléno (si l'on s'adresse à plusieurs personnes)"}, {"fr": "Bonsoir", "lari": "mboté"}]}, {"nom": "Expressions usuelles", "entrees": [{"fr": "Qui es-tu ?", "lari": "ngué nani ?"}, {"fr": "Où est-il ?", "lari": "Kwe kena ?"}, {"fr": "Que fais-tu ?", "lari": "(ngué) nti ta sà ?"}, {"fr": "Que fait-il ?", "lari": "(yandi) nti ka ta sà ?"}, {"fr": "Quand pars-tu ?", "lari": "(ngué) Tîa tangu kwenda ?"}, {"fr": "Quand arrives-tu ?", "lari": "(ngué) Tîa tangu tula ?"}, {"fr": "Où vas-tu ?", "lari": "kué ta kwénda ?"}, {"fr": "D'où viens-tu ?", "lari": "kué tûkidi ?"}, {"fr": "Comment fait-il ? ou Qu'a-t-il fait ?", "lari": "bwé ka sidi ?"}, {"fr": "Pourquoi ?", "lari": "munti ?"}, {"fr": "Combien coûte cette chose ?", "lari": "timâ-tî ntia ntalu tié ?"}, {"fr": "Où habite X ?", "lari": "kwé ka bâ ka (muatu) ou kwé ka bêla ka (muatu)"}, {"fr": "Comment allez vous ?", "lari": "lu kolélé ?"}, {"fr": "Parlez vous Français ?", "lari": "lumputu lwa lu zébi ?"}, {"fr": "Parlez vous Lâri ?", "lari": "Lâri tîa lu zébi ?"}, {"fr": "Je ne comprends pas Lâri", "lari": "ka nzébia Lâri ko"}, {"fr": "Excusez moi", "lari": "léémvo'éno"}, {"fr": "Je ne peux pas", "lari": "ka ni léenda ko"}, {"fr": "Conduisez-moi à ... en voiture", "lari": "nat'éno ku ... ou mu voiture"}, {"fr": "Arrêtez-vous ici", "lari": "kangam'éno hà"}, {"fr": "Attendez moi ici", "lari": "nkêl'éno hà"}, {"fr": "Montrez moi", "lari": "nsônguil'éno"}, {"fr": "Je désire", "lari": "nzôlolo"}, {"fr": "Où vas-tu ce matin ?", "lari": "kué ta kwénda mu pàri ?"}, {"fr": "Quelle heure est-il ?", "lari": "ntia ntangu yena"}, {"fr": "Il est 7 heures 30 min", "lari": "yéka 7 heures 30 min"}, {"fr": "Je vais à l'école", "lari": "diele ku luko"}]}, {"nom": "Les excuses et bénédictions", "entrees": [{"fr": "que Dieu te bénisse", "lari": "nzâmbi ka ku sakumuna"}, {"fr": "que Dieu te protège", "lari": "nzâmbi ka ku tênséka kôko (litt. que Dieu te tienne la main)"}, {"fr": "demander pardon", "lari": "lômba lêmvo"}, {"fr": "pardon !", "lari": "lêmvo !"}, {"fr": "pardonne moi", "lari": "lêmvwaku !"}, {"fr": "je ne vais plus le faire", "lari": "ni vutwa karila kô"}, {"fr": "Que Dieu t'accompagne", "lari": "Nzambi ka ku twadisa"}, {"fr": "Je n'ai rien fait", "lari": "ntiria timako"}]}, {"nom": "Interjections", "entrees": [{"fr": "Au secours !", "lari": "mbakisa !"}, {"fr": "Attention !", "lari": "sà mayéla !"}, {"fr": "Silence !", "lari": "luazà !"}, {"fr": "Assez !", "lari": "sà kwâ bo !"}, {"fr": "Va-t-en !", "lari": "yéndâ ! ou katukâ !"}, {"fr": "Tais-toi !", "lari": "kangâ nwà !"}, {"fr": "Stop !", "lari": "kângamá !"}, {"fr": "Arrête !", "lari": "sa kwa bo !"}]}, {"nom": "Temps et calendrier", "entrees": [{"fr": "le temps", "lari": "ntângu (au sens d'heure, de moment, de période, d'époque)"}, {"fr": "année", "lari": "mvula"}, {"fr": "saison", "lari": "muvu"}, {"fr": "mois", "lari": "ngônda"}, {"fr": "semaine", "lari": "lumingu"}, {"fr": "aujourd'hui", "lari": "lumbu-tî ou lolo"}, {"fr": "hier", "lari": "mazôno"}, {"fr": "demain", "lari": "mbazi"}, {"fr": "jour", "lari": "lumbu"}]}, {"nom": "Les jours de la semaine", "entrees": [{"fr": "lundi", "lari": "léndi"}, {"fr": "mardi", "lari": "Märadi"}, {"fr": "mercredi", "lari": "mérécrédi"}, {"fr": "jeudi", "lari": "jédi"}, {"fr": "vendredi", "lari": "vendérédi"}, {"fr": "samedi", "lari": "samédi"}, {"fr": "dimanche", "lari": "lumingu"}]}, {"nom": "Les moments du jour", "entrees": [{"fr": "nuit", "lari": "mpîmpa ou buisi"}, {"fr": "matin", "lari": "pàri/sûka"}, {"fr": "midi", "lari": "midi"}, {"fr": "soir", "lari": "nkôkila"}]}, {"nom": "Exemples de phrases temporelles", "entrees": [{"fr": "je pars demain", "lari": "mbazi ni kwénda"}, {"fr": "je pars après demain", "lari": "muna mbazi ni kwénda"}, {"fr": "je pars lundi", "lari": "léndi ni kwénda"}, {"fr": "quelle heure as-tu ?", "lari": "ntîà ntângu yé nânku ?"}, {"fr": "il est 7h du matin", "lari": "yéka 7h yà padi"}, {"fr": "tu viendras à midi pour qu'on mange", "lari": "mbo kwîzi mu midi ta dià"}]}, {"nom": "Prépositions", "entrees": [{"fr": "à", "lari": "ku"}, {"fr": "arrière", "lari": "ku manima"}, {"fr": "avec", "lari": "na"}, {"fr": "avant", "lari": "ku matu"}, {"fr": "chez", "lari": "kwé"}, {"fr": "jusqu'à", "lari": "tî"}, {"fr": "depuis", "lari": "tuka"}, {"fr": "hors de", "lari": "duka"}, {"fr": "pour", "lari": "mu"}, {"fr": "sans", "lari": "kani"}, {"fr": "sous", "lari": "kunà ou kunsi"}, {"fr": "sur", "lari": "hana ... zulu"}, {"fr": "vers", "lari": "ku"}]}, {"nom": "Adjectifs", "entrees": [{"fr": "affamé", "lari": "nsatu"}, {"fr": "rassasié", "lari": "yukuti"}, {"fr": "bas", "lari": "bânda"}, {"fr": "haut", "lari": "lôndé"}, {"fr": "bon", "lari": "muboté (pour mûntu)"}, {"fr": "mauvais", "lari": "mubi (pour mûntu)"}, {"fr": "cassé", "lari": "budika"}, {"fr": "cher", "lari": "ntalu"}, {"fr": "pas cher", "lari": "fuika"}, {"fr": "court", "lari": "nkufi"}, {"fr": "long", "lari": "là"}, {"fr": "cru", "lari": "nkûnzu"}, {"fr": "cuit", "lari": "yà"}, {"fr": "fatigué", "lari": "fatika"}, {"fr": "endormi", "lari": "ku tolo"}, {"fr": "réveillé", "lari": "wa vumbuka"}, {"fr": "étroit", "lari": "fioti"}, {"fr": "large", "lari": "néné"}, {"fr": "facile", "lari": "kôndo mpasi"}, {"fr": "difficile", "lari": "mpasi"}, {"fr": "faible", "lari": "kôndo ngolo"}, {"fr": "fort", "lari": "nkwa ngolo"}, {"fr": "froid", "lari": "tiozi"}, {"fr": "chaud", "lari": "tiya"}, {"fr": "jeune", "lari": "mwâna"}, {"fr": "vieux", "lari": "mbuta"}, {"fr": "léger", "lari": "pêpé"}, {"fr": "lourd", "lari": "déma"}, {"fr": "lent", "lari": "malémbé"}, {"fr": "rapide", "lari": "ntinu"}, {"fr": "mou", "lari": "tia pêtà (pour tima, une chose)"}, {"fr": "dur", "lari": "tia kubà (pour tima, une chose)"}, {"fr": "mûr", "lari": "bwakà"}, {"fr": "vert", "lari": "mfubà"}, {"fr": "neuf", "lari": "mona"}, {"fr": "usé", "lari": "ntamà"}, {"fr": "petit", "lari": "fioti"}, {"fr": "grand", "lari": "néné"}, {"fr": "possible", "lari": "lénda"}, {"fr": "impossible", "lari": "lombo lénda"}, {"fr": "proche", "lari": "bandakana"}, {"fr": "lointain", "lari": "malà"}, {"fr": "propre", "lari": "ntséma ou bunkété"}, {"fr": "sale", "lari": "mvindou"}, {"fr": "malade", "lari": "bêla"}, {"fr": "sain", "lari": "wasà"}, {"fr": "vide", "lari": "mpamba"}, {"fr": "plein", "lari": "fuluka"}, {"fr": "vrai (pour une affaire, un fait)", "lari": "sàmù"}, {"fr": "faux (pour une affaire, un fait)", "lari": "musàmù ou sàmù"}]}, {"nom": "Les couleurs", "entrees": [{"fr": "Blanc", "lari": "mpêmbé"}, {"fr": "Noir", "lari": "ndômbi"}, {"fr": "Rouge", "lari": "mbwaki"}, {"fr": "Vert", "lari": "ntiana makaya"}]}, {"nom": "Les goûts", "entrees": [{"fr": "Acide", "lari": "nsà"}, {"fr": "Amer", "lari": "ndûndi"}, {"fr": "Salé", "lari": "tiê mungwa"}, {"fr": "Sucré", "lari": "tiê sûkari"}]}, {"nom": "École et vocabulaire académique", "entrees": [{"fr": "L'école/L'université", "lari": "lukolo"}, {"fr": "Le professeur/L'enseignant", "lari": "nlongi"}, {"fr": "L'élève/L'étudiant", "lari": "nlongoki"}, {"fr": "les études", "lari": "mi nkanda"}, {"fr": "Le travail/La tâche", "lari": "kisalu"}, {"fr": "le livre", "lari": "buku"}]}, {"nom": "Phrases complètes", "entrees": [{"fr": "Le professeur enseigne aux élèves ce matin.", "lari": "nlongi nti ta longa balongoki mu pàri."}, {"fr": "J'apprends la langue sur mon ordinateur.", "lari": "nti longoka kilâri mu ordinatèr yani."}, {"fr": "Nous lisons un grand livre.", "lari": "tu ta tânga nkanda wunéné."}]}, {"nom": "Conjugaison : présent (manger)", "entrees": [{"fr": "je mange", "lari": "dia ni ta dia"}, {"fr": "tu manges", "lari": "dia ta dia"}, {"fr": "il/elle mange", "lari": "dia ka ta dia"}, {"fr": "nous mangeons", "lari": "dia tu ta dia"}, {"fr": "vous mangez", "lari": "dia lu ta dia"}, {"fr": "ils/elles mangent", "lari": "dia ba ta dia"}]}, {"nom": "Conjugaison : futur proche (manger)", "entrees": [{"fr": "je vais manger", "lari": "dia ni dia"}, {"fr": "tu vas manger", "lari": "dia ku dia"}, {"fr": "il/elle va manger", "lari": "dia ka dia"}, {"fr": "nous allons manger", "lari": "dia tu dia"}, {"fr": "vous allez manger", "lari": "dia lu dia"}, {"fr": "ils/elles vont manger", "lari": "dia ba dia"}]}, {"nom": "Aliments et objets", "entrees": [{"fr": "une banane", "lari": "dikondi"}, {"fr": "du manioc", "lari": "yaka"}, {"fr": "de l'eau", "lari": "mamba"}, {"fr": "le pain", "lari": "di mpa"}, {"fr": "un fruit", "lari": "mbuntu"}]}, {"nom": "Vue d'ensemble : corps, famille, vie", "entrees": [{"fr": "le corps/les corps", "lari": "nitu/zi nitu"}, {"fr": "le visage/les visages", "lari": "ti diri/bi diri"}, {"fr": "la main/les mains", "lari": "koko/moko"}, {"fr": "le pied/les pieds", "lari": "kilu/malu"}, {"fr": "la famille/les familles", "lari": "kanda/ma kanda"}, {"fr": "l'émotion/les émotions", "lari": "émotion/ zi émotion"}, {"fr": "les évènements de la vie", "lari": "misamu mia luzingu"}, {"fr": "les fêtes", "lari": "matanga"}, {"fr": "les vêtements", "lari": "bituki"}]}, {"nom": "Le corps humain", "entrees": [{"fr": "le cou/les cous", "lari": "ntingu/zi ntingu"}, {"fr": "la poitrine/les poitrines", "lari": "ntulu/zi ntulu"}, {"fr": "le ventre/les ventres", "lari": "moyo/mioyo"}, {"fr": "la tête/les têtes", "lari": "mutu/mitu"}, {"fr": "le sein/les seins", "lari": "beni/mabeni"}, {"fr": "le mamelon/les mamelons", "lari": "mutu wa beni(mutu beni)/mitu mia beni(mitu beni)"}, {"fr": "le nombril/les nombrils", "lari": "mukumba(mu kimba)/mikumba(mi kumba)"}, {"fr": "la cuisse/les cuisses", "lari": "bunda/mabunda(ma bunda)"}, {"fr": "le genou/les genoux", "lari": "koto/makoto( ma koto)"}, {"fr": "la hanche/les hanches", "lari": "luketo/ tuketo"}, {"fr": "le talon/les talons", "lari": "tinkoso(ti nkoso)/binkoso(bi nkoso)"}, {"fr": "le mollet/les mollets", "lari": "mutanga(mu tanga)/mitanga(mi tanga)"}, {"fr": "la fesse/les fesses", "lari": "taku/mataku(ma taka)"}, {"fr": "l'aisselle/les aisselles", "lari": "mpakani/zi mpakani"}, {"fr": "le dos/les dos", "lari": "nima/manima"}, {"fr": "la nuque/les nuques", "lari": "kosi/makosi(ma kosi)"}, {"fr": "la cheville/les chevilles", "lari": "disu dia kulu/meso ma kulu"}, {"fr": "la main/les mains", "lari": "kôkô/moko"}, {"fr": "le coude/les coudes", "lari": "koto/makoto"}, {"fr": "le bras/les bras", "lari": "kôkô/makôkôo"}, {"fr": "la femme/les femmes", "lari": "mu nkento/ ba nkento"}, {"fr": "l'homme/les hommes", "lari": "bakala/ba bakala"}]}, {"nom": "Le visage", "entrees": [{"fr": "le cheveu/les cheveux", "lari": "lusuki(lu suki)/ t'suki"}, {"fr": "la peau/les peaux", "lari": "mu kanda(mukanda)/ mikanda(mi kanda)"}, {"fr": "le nez/les nez", "lari": "mbombo/ zi mbombo"}, {"fr": "la lèvre/les lèvres", "lari": "tikoba(ti koba)"}, {"fr": "l'oeil/les yeux", "lari": "disu/meso"}, {"fr": "la bouche/les bouches", "lari": "munwa/minwa"}, {"fr": "la narine/les narines", "lari": "munwa mbombo/minwa mia mbombo"}, {"fr": "la mâchoire/les mâchoires", "lari": "mbulukutu/mabanga"}, {"fr": "le front/les fronts", "lari": "mbunzu/ zi mbunzu"}, {"fr": "la joue/les joues", "lari": "bundi/ ma bundi(mabundi)"}, {"fr": "l'oreille/les oreilles", "lari": "kûtû/makûtû(ma kûtû)"}, {"fr": "la dent/les dents", "lari": "dinu/méno"}, {"fr": "la langue/les langues", "lari": "ludimi/tudimi"}, {"fr": "le cil/les cils", "lari": "ndabu/zi ndabu"}, {"fr": "le sourcil/les sourcils", "lari": "tsé/zi tsé"}, {"fr": "le menton/les mentons", "lari": "tibanga/mabanga"}]}, {"nom": "La famille", "entrees": [{"fr": "la grand-mère/les grands-mères", "lari": "nkaka ya nkento/nkaka za nkento"}, {"fr": "le grand-père/les grands-pères", "lari": "nkaka ya bakala/nkaka za bakala"}, {"fr": "l'oncle/les oncles", "lari": "ngwa kasi(ngwakasi)/ba ngwakasi(ngwa kasi)"}, {"fr": "la tante/les tents", "lari": "tààa ra nkento/ba tata ba nkento"}, {"fr": "le père/les pères", "lari": "tàtà/ba tàtà"}, {"fr": "la mère/les mères", "lari": "màmà/ ba màmà"}, {"fr": "le frère/les frères", "lari": "nkazi/ ba nkazi"}, {"fr": "la sœur/les sœurs", "lari": "tibusi(ti busi)/bibusi(bi busi)"}, {"fr": "le fils/les fils", "lari": "mwana wa bakala/bàlà wa nkento"}, {"fr": "la fille/les filles", "lari": "mwana wa nkento/bàlà ba nkento"}, {"fr": "le mari/les maris", "lari": "bakala/ ba bakala"}, {"fr": "le petit-fils/les petits-fils", "lari": "mu tékolo wa bakala/ba tékolo ba bakala"}, {"fr": "la petite-fille/les petites-filles", "lari": "mu tékolo wa nkento/ ba tékolo ba nkento"}, {"fr": "le gendre/les gendres", "lari": "kwezi/ba kwezi"}, {"fr": "le neveu/les neveux", "lari": "mwana busi wa bakal/bàlà ba busi ba bakala"}, {"fr": "la belle soeur/les belles soeurs", "lari": "nzari/ ba nzari"}, {"fr": "la belle-mère/les belles-mères", "lari": "màbukô/ba màbukô"}, {"fr": "le beau-père/les beaux-pères", "lari": "tabuko/ba tàbuko"}, {"fr": "la belle-fille/les belles-filles", "lari": "bukô/ ba bukô"}, {"fr": "le bébé/les bébés", "lari": "ntébélé/ba ntébélé"}, {"fr": "l'enfant/les enfants", "lari": "mwana/ bàlà"}, {"fr": "la nièce/les nièces", "lari": "mwana Busi wa nkento/ bàlà ba busi ba nkento"}, {"fr": "l'dolescent(e)/les adolescents(e)", "lari": "mwana fioti/bàlà ba fioti"}]}, {"nom": "Expressions de la famille", "entrees": [{"fr": "les enfants", "lari": "bàlà"}, {"fr": "les parents de la famille", "lari": "kanda"}, {"fr": "les jumeaux", "lari": "ma pasa( au singulier, di pasa"}, {"fr": "Voici mes parents( de la famille)", "lari": "dî ni kanda"}, {"fr": "c'est un bébé", "lari": "wena mwana fioti"}, {"fr": "adulte", "lari": "wa kula"}, {"fr": "c'est ma femme", "lari": "mulumi ani"}]}, {"nom": "Les émotions", "entrees": [{"fr": "heureux", "lari": "nsaï"}, {"fr": "triste", "lari": "tiadi"}, {"fr": "effrayé", "lari": "bunkuta"}, {"fr": "fâché", "lari": "nkési"}, {"fr": "gêné", "lari": "nsoni"}, {"fr": "timide", "lari": "nzuna"}, {"fr": "fier", "lari": "nsaï"}, {"fr": "nerveux", "lari": "miangu"}, {"fr": "ennuyé", "lari": "bukaka"}, {"fr": "confiant", "lari": "kiminu"}, {"fr": "pleurer", "lari": "dila (ce verbe est à l'infinitif"}, {"fr": "crier", "lari": "lwasa"}, {"fr": "choqué", "lari": "mpasi"}]}, {"nom": "Expressions des émotions", "entrees": [{"fr": "il est fâché", "lari": "bakidi nkési"}, {"fr": "il est timide ou calme", "lari": "wa nzuna"}, {"fr": "nous sommes effrayés", "lari": "tweka na bukuta"}, {"fr": "les enfants sont tristes", "lari": "bàlà tiadi tié nawu"}, {"fr": "je suis triste", "lari": "tiadi tiénani"}, {"fr": "il est heureux", "lari": "nsaï yé nandi"}]}, {"nom": "Les évènements de la vie", "entrees": [{"fr": "naitre", "lari": "butuka"}, {"fr": "commencer à l'école", "lari": "batika ku lukolo"}, {"fr": "trouver un emploi", "lari": "baka ti salu"}, {"fr": "se marier", "lari": "kwela"}, {"fr": "le mariage", "lari": "ma kwela"}, {"fr": "avoir un bébé", "lari": "baka mwana"}, {"fr": "obtenir la licence", "lari": "baka licence"}, {"fr": "l'enterrement", "lari": "djiamunu"}, {"fr": "tomber amoureux", "lari": "zola"}, {"fr": "mourir", "lari": "fwa"}, {"fr": "l'acte de naissance", "lari": "nkanda mbutukulu"}, {"fr": "l'anniversaire de mariage", "lari": "anniversaire ya makwela"}, {"fr": "le jeûne", "lari": "djiéna"}, {"fr": "le baptême", "lari": "baptèma"}]}, {"nom": "Les fêtes", "entrees": [{"fr": "jour d'anniversaire", "lari": "lumbu tia mbutukulu"}, {"fr": "la carte", "lari": "ti carte"}, {"fr": "le nouvel An", "lari": "bonabona"}, {"fr": "le défilé", "lari": "ndiatulu"}]}, {"nom": "Les vêtements", "entrees": [{"fr": "le chapeau", "lari": "mpû"}, {"fr": "le slip", "lari": "caliso"}, {"fr": "une chemise", "lari": "chémise"}]}, {"nom": "Vêtements d'enfants", "entrees": [{"fr": "les vêtements d'enfants", "lari": "binkuti bia bàlà"}, {"fr": "le tricot de corps", "lari": "ti nkti tia tiozi"}, {"fr": "le bouton-pression", "lari": "bouton ya dèdè"}, {"fr": "le chapeau de soleil", "lari": "mpu ya mwni"}, {"fr": "la solopette", "lari": "nkala na néna"}, {"fr": "la jupe", "lari": "jupe"}, {"fr": "le tablier", "lari": "tablier"}, {"fr": "le t-shirt", "lari": "t-shirt"}, {"fr": "les chaussons", "lari": "chausson"}]}, {"nom": "Verbes (infinitif)", "entrees": [{"fr": "manger", "lari": "dia"}, {"fr": "chanter", "lari": "tanga"}, {"fr": "danser", "lari": "tina"}, {"fr": "entrer", "lari": "kota"}, {"fr": "tuer", "lari": "wonda"}, {"fr": "prendre", "lari": "bonga"}, {"fr": "cuisiner", "lari": "lamba"}, {"fr": "parler", "lari": "zonza"}, {"fr": "pêcher", "lari": "loba"}, {"fr": "pécher", "lari": "sumuka"}, {"fr": "lire", "lari": "tanga"}, {"fr": "toquer", "lari": "nkonkota"}, {"fr": "brûler", "lari": "yoka"}, {"fr": "conduire", "lari": "nata"}, {"fr": "diriger", "lari": "twadisa"}, {"fr": "suivre", "lari": "landa"}, {"fr": "porter les habits", "lari": "lwata"}, {"fr": "construire", "lari": "tunga"}, {"fr": "frapper", "lari": "winda"}, {"fr": "cuire les aliments", "lari": "yisa"}, {"fr": "bouger", "lari": "nigana"}, {"fr": "prier", "lari": "sambila"}, {"fr": "écrire", "lari": "sonika"}, {"fr": "travailler", "lari": "sala"}, {"fr": "mélanger", "lari": "bvukisa"}, {"fr": "passer", "lari": "yoka"}, {"fr": "faire passer", "lari": "yokisa"}, {"fr": "démolir", "lari": "mwangasa"}, {"fr": "casser", "lari": "bula"}, {"fr": "glisser", "lari": "tiona"}]}, {"nom": "Conjugaison : présent du verbe zola (aimer)", "entrees": [{"fr": "j'aime", "lari": "nizolele"}, {"fr": "tu aimes", "lari": "kuzolele"}, {"fr": "il/elle aime", "lari": "kazolele"}, {"fr": "nous aimons", "lari": "tuzolele"}, {"fr": "vous aimez", "lari": "luzolele"}, {"fr": "ils/elles aiment", "lari": "bazolele"}]}, {"nom": "Vocabulaire des textes", "entrees": [{"fr": "Dieu", "lari": "Nzambi", "ref": "Texte « Dieu a-t-il réellement dit ? » · §1"}, {"fr": "serpent", "lari": "nioka", "ref": "Texte « Dieu a-t-il réellement dit ? » · §1"}, {"fr": "Satan", "lari": "Satana", "ref": "Texte « Dieu a-t-il réellement dit ? » · §3"}, {"fr": "sang", "lari": "menga", "ref": "Texte « Dieu a-t-il réellement dit ? » · §2"}, {"fr": "péché", "lari": "sumu", "ref": "Texte « Dieu a-t-il réellement dit ? » · §2"}, {"fr": "terre", "lari": "toto", "ref": "Texte « Dieu a-t-il réellement dit ? » · §3"}, {"fr": "prophète", "lari": "mBikudi", "ref": "Texte « Dieu a-t-il réellement dit ? » · §4"}, {"fr": "les prophètes", "lari": "ba mbikudi", "ref": "Texte « Dieu a-t-il réellement dit ? » · §12"}, {"fr": "Seigneur", "lari": "Mfumu", "ref": "Texte « Dieu a-t-il réellement dit ? » · §2"}, {"fr": "génération", "lari": "mbandu", "ref": "Texte « Dieu a-t-il réellement dit ? » · §2"}, {"fr": "au commencement", "lari": "rana bandu", "ref": "Texte « Dieu a-t-il réellement dit ? » · §3"}, {"fr": "à la fin des temps", "lari": "mu tangu ya ma nsukina", "ref": "Texte « Dieu a-t-il réellement dit ? » · §2"}, {"fr": "église (maison de Dieu)", "lari": "nzo nzambi", "ref": "Texte « Dieu a-t-il réellement dit ? » · §10"}, {"fr": "église, assemblée", "lari": "di bundu", "ref": "Texte « Dieu a-t-il réellement dit ? » · §5"}, {"fr": "quitter", "lari": "katuka", "ref": "Texte « Dieu a-t-il réellement dit ? » · §11"}, {"fr": "venir", "lari": "kwiza", "ref": "Texte « Dieu a-t-il réellement dit ? » · §11"}, {"fr": "yeux", "lari": "meso", "ref": "Texte « Dieu a-t-il réellement dit ? » · §4"}, {"fr": "se moquer, rire", "lari": "seka", "ref": "Texte « Dieu a-t-il réellement dit ? » · §12"}, {"fr": "croix", "lari": "kulusu", "ref": "Texte « Dieu a-t-il réellement dit ? » · §13"}, {"fr": "Saint-Esprit", "lari": "Mpeve ya longo", "ref": "Texte « Dieu a-t-il réellement dit ? » · §15"}, {"fr": "servir", "lari": "sadila", "ref": "Texte « Dieu a-t-il réellement dit ? » · §15"}, {"fr": "croire", "lari": "kwikila", "ref": "Texte « Dieu a-t-il réellement dit ? » · §13"}, {"fr": "Sauveur", "lari": "mvukisi", "ref": "Texte « Dieu a-t-il réellement dit ? » · §13"}, {"fr": "bible", "lari": "biblia", "ref": "Texte « Dieu a-t-il réellement dit ? » · §8"}, {"fr": "beaucoup", "lari": "zingi", "ref": "Texte « Dieu a-t-il réellement dit ? » · §4"}, {"fr": "catholique", "lari": "mpélo", "ref": "Texte « Dieu a-t-il réellement dit ? » · §4"}, {"fr": "protestant", "lari": "ngérozo", "ref": "Texte « Dieu a-t-il réellement dit ? » · §4"}, {"fr": "doute", "lari": "ntembe", "ref": "Texte « Dieu a-t-il réellement dit ? » · §4"}, {"fr": "songes", "lari": "ndoji", "ref": "Texte « Dieu a-t-il réellement dit ? » · §4"}, {"fr": "visions", "lari": "bi moni", "ref": "Texte « Dieu a-t-il réellement dit ? » · §4"}, {"fr": "malédiction", "lari": "ndoko", "ref": "Texte « Dieu a-t-il réellement dit ? » · §2"}, {"fr": "adultère", "lari": "nsuza", "ref": "Texte « Dieu a-t-il réellement dit ? » · §2"}, {"fr": "arbre", "lari": "muti", "ref": "Texte « Dieu a-t-il réellement dit ? » · §1"}, {"fr": "ruse (ou connaissance)", "lari": "mayela", "ref": "Texte « Dieu a-t-il réellement dit ? » · §7"}, {"fr": "apôtres", "lari": "bilandi", "ref": "Texte « Dieu a-t-il réellement dit ? » · §12"}, {"fr": "arche", "lari": "bwatu", "ref": "Texte « Dieu a-t-il réellement dit ? » · §12"}, {"fr": "déluge", "lari": "mvula", "ref": "Texte « Dieu a-t-il réellement dit ? » · §12"}, {"fr": "ciel", "lari": "zulu", "ref": "Texte « Dieu a-t-il réellement dit ? » · §15"}, {"fr": "vie éternelle", "lari": "zingu lwa mankululu", "ref": "Texte « Dieu a-t-il réellement dit ? » · §11"}, {"fr": "jardin", "lari": "ntsaba", "ref": "Texte « Dieu a-t-il réellement dit ? » · §10"}, {"fr": "paroles, Message", "lari": "mambu", "ref": "Texte « Dieu a-t-il réellement dit ? » · §10"}, {"fr": "vous (pluriel)", "lari": "béno", "ref": "Texte « Dieu a-t-il réellement dit ? » · §11"}, {"fr": "sachez", "lari": "zabeno", "ref": "Texte « Dieu a-t-il réellement dit ? » · §7"}, {"fr": "mort, cadavre", "lari": "mvumbi", "ref": "Texte « Dieu a-t-il réellement dit ? » · §16"}]}], "grammaire": {"classes_nominales": [{"classe": "Classe 1 (humain, singulier)", "prefixe": "mu-", "fr": "une personne", "lari": "mûntu"}, {"classe": "Classe 2 (humain, pluriel)", "prefixe": "ba-", "fr": "des personnes", "lari": "bântu"}, {"classe": "Classe 7 (objets, langues, singulier)", "prefixe": "ki-", "fr": "la langue lâri", "lari": "kilâri (ou lâri)"}, {"classe": "Classe 8 (objets, pluriel)", "prefixe": "bi-", "fr": "des choses", "lari": "bîma"}], "regles": [{"titre": "Emprunts au français", "texte": "Un mot français peut être emprunté tel quel en lari, sans article.", "exemples": [{"fr": "le dictionnaire", "lari": "dictionnaire"}, {"fr": "le téléphone", "lari": "téléphone"}]}, {"titre": "Syntaxe : le complément en tête", "texte": "La phrase peut commencer par le complément : complément + pronom personnel + verbe.", "exemples": [{"fr": "il mange du pain", "lari": "di mpa ka ta dia", "detail": "di mpa = du pain · ka ta = il · dia = mange"}, {"fr": "nous chantons une chanson", "lari": "mukunga tu ta tanga", "detail": "mukunga = une chanson · tu ta = nous · tanga = chante"}]}]}, "textes": [{"titre_lari": "Kacou 26 : Wa ma tieleka Nzambi waka télé ti ?", "titre_fr": "Dieu a-t-il réellement dit ?", "reference_fr": "Kc.23v7", "paragraphes": [{"n": 1, "lari": "tiangu ti, mu mpadi mù nzololo nzonza samu éwu: Wa ma tieleka Nzambi waka télé ti ? Tomweno tala buna bu fwanakané mu Genèse 3: 1 ti 6! Ntété mu Genèse 2:16 mpé 17, Nzambi wa télé ku Adami ka diandi muti wa mayela mama bote na mama bi. Éva ka ba koko ni Adami wa mu longa wo. Bo nioka bo ka yizidi, ni ku iandi ka yenda.", "fr": "Bien, ce matin je voudrais parler du sujet : Dieu a-t-il réellement dit ? Remarquez bien Genèse 3 :1 à 6 ! D'abord en Genèse 2 :16 et 17, Dieu commanda à Adam de ne pas manger de l'arbre de la connaissance du bien et du mal. Ève n'était pas là et c'est Adam qui le lui prêcha. Mais quand le serpent vint, c'est vers elle qu'il alla."}, {"n": 2, "lari": "Nioka na Éva ni beri nzonza ka mwa ntangu mpé ni ba yi nzonzela samu wa di sumu dia sexe nganti ba sa bu nsuza na yandi. Nioka ni kamu nzonzela nsalulu za bu nsuza ni ba sidi bu nsuza, ni menga ma dukidi ku Éva mpé ma nata ndoko ra tôto ti. Tiangu ti ni menga Abel ka nsongele mpé mu tangu ya ma nsukina, Mfumu Yésu Christo ka nsongele menga mandi ména ma ntalu, mpé ni makatudi di sumu dia bo ba solo mu mbandu ba télé mbandu, na ba ma mê, méno mBikudi kacou Philippe nta lu nzonzela.[ Ndr: di bundu di télé : <<Amen!>>].", "fr": "Le serpent et Ève causèrent un moment et abordèrent le sujet du péché de sexe afin de commettre adultère avec elle. Le serpent lui parla de relation sexuelle et ils commirent adultère, et le sang coula de devant Ève et apporta la malédiction sur la terre. C’est pourquoi c’est le sang que Abel présenta et à la fin des temps, le Seigneur Jésus-Christ présenta son propre sang qui est le sang le plus précieux, et cela effaça le péché de tous les élus de génération en génération, ainsi que les miens, moi le prophète Kacou Philippe qui vous parle. [Ndr : l’assemblée dit : « Amen ! »]."}, {"n": 3, "lari": "Tiangu, rana bandu ni mu sexe ndoko ya kota ra toto ti. Tiangu lu lombolo na luvé mu nvukana na n'kento WA lombolo kwela ku nganda diandi. [Ndr: Dibundu di télé : Amen !>>]. Satana waka zaba kâ taléno miéka yidika: Satana wa ta<< ti! Nzambi ébu katele : ka lu fwena dia ko>>?", "fr": "Ainsi, au commencement c’est par le sexe que la malédiction toucha la terre. Et vous n’avez pas le droit de coucher avec une femme que vous n’avez pas marié auprès de ses parents. [Ndr : L’assemblée dit : « Amen ! »]. Satan était bien au courant de cela mais voyez sa réaction : Satan a dit « Quoi ! Dieu a dit : vous n'en mangerez pas » ?"}, {"n": 4, "lari": "Nzambi wa télé mu verset 17 ya Genèse 2: << bo, lumbu tio tie dia yo, léndi fwa>>. Ka nioka wa télé mu Genèse 3 :4: << ka léndia fwa ko>>. Tiangu ti, ni wo bantu ba lombo bakula lumbu ti. Nka nso butieleka bu lendi duka mu mwa wa twadisi ya mpélo, ngérozo, evangelique na ya branhamiste, samu wéwo kéna mBikudi ko ya mbandu yi mpé ka yandia ko lu fweni lwila. [ Ndr: di bundu di télé : <<Amen !>>]. Ni rana Éva ka bebisila. Tiangu , Éva ka sidi ntembe mpé ni ka dia yo, mpé méso mandi ni mazubuka mpé ni ka batika mu mona ndoji za zingi mpé na bi moni Tiana mBikudi, Nzambi. Mio mia tula rana bandu ni mio mi tula mu tangu ya ma nsukina.", "fr": "Dieu avait dit au verset 17 de Genèse 2 : « Car, au jour où tu en mangeras, tu mourras certainement ». Mais le serpent a dit dans Genèse 3 :4 : « Vous ne mourrez point certainement ». Et cela, c’est ce que les gens ne comprennent pas aujourd’hui. Peu importe la vérité qui peut sortir de la bouche d’un dirigeant catholique, protestant, évangélique et branhamiste, le problème c’est qu’il n’est pas le prophète de la génération et ce n’est pas lui que vous devez écouter. [Ndr : l’assemblée dit : « Amen ! »]. Et ce fut l’erreur de Ève. Finalement, Ève douta et en mangea, et ses yeux s'ouvrirent et elle eut beaucoup de songes et de visions comme un prophète, un Dieu. Et ce qui arriva au commencement, c'est ce qui arrivera à la fin des temps."}, {"n": 5, "lari": "Bala ba bakala ba Nzambi na ba nkuyu bo ba mvutu wa Satana. Bo bavutu tanga ma buku ma ba evangelique, bo bavutu wa ma longi ma ba evangeliques, bo ba bika baba nteseka moko ku bala baba bakala ba mu nkuyu bo bemo ma bundu ma ba mpélo, ngérozo, évangéliques na branhamistes. Na mio, meso mawu mbô ma jibuka mpé bo baba na ndoji za zingi. [Ndr: di bundu di télé : <<Amen!>>].", "fr": "Les fils de Dieu et les fils du diable écouteront encore Satan. Ils liront les livres évangéliques, ils écouteront les prédications évangéliques, ils se laisseront imposer les mains par les fils du diable qui agissent dans ces églises catholiques, protestantes, évangéliques et branhamistes. Et avec cela, leurs yeux s’ouvriront et ils auront beaucoup de songes. [Ndr : l’assemblée dit : « Amen ! »]."}, {"n": 6, "lari": "Tangu yi ti ta kaletiéno rana ratu batikidi. Ntété nsombolo, Satana mu kati dia mbala ma nioka kedi ta ébu : << toko kela ti lumbu tio tia ba wa lunga, bwa landa Nzambi! Wa tidi twenia bu fwanakané mpé :<< toko yidika Zingu tiaku ntété ! Kwendandi ntinu !>> Mpé, rama nima ma ntambulwandi, bu ka mweni builu'iandi, weka batika mu ta: << ti bi ta nsongesa ti mio mieka tama ta miena mia bu tieleka ? Ti bita nsongesa ti ni kuna kwena bu tieleka ??", "fr": "Maintenant revenons à notre texte. Avant la conversion, Satan à travers les enfants du serpent disait : « Attends le jour où tu auras une situation stable, tu pourras suivre Dieu ! Tu es encore trop jeune » ou encore : « Mets ta vie en ordre d'abord ! Ne te presse pas ! » Puis, après l'engagement, voyant sa chute, il commençait à dire : « Qu'est-ce qui prouve que ce qu'il dit est vrai ? Qu'est-ce qui prouve que c'est là-bas que se trouve la vérité » ?"}, {"n": 7, "lari": "Bo lumbu tio nioka tieka mona buku dia mBikudi kacou Philippe, boka sa mayela mama bi mpé na vwenzolo: << oh, buku dio dia nzebi! Wo kani kacou Philippe akô>>? Ti, zabeno ti ni nioka yokwa ya wuna Éva. Ka lubandi ba wubakana! [Ndr: di bundu di télé :<<Amen!>>].", "fr": "Et quand un jour le serpent verra le livre du prophète Kacou Philippe, il dira avec ruse et mépris : « Oh, je connais ce livre ! N'est-ce pas Kacou Philippe » ? Alors, sachez que c'est le même serpent qui avait séduit Ève. Ne soyez pas distraits ! [Ndr : l’assemblée dit : « Amen ! »]."}, {"n": 8, "lari": "Mbo kakota mu bala ba bakala ba Bélial mu ta ti:<< dio tia di bundu dio djieba fungulaka ra yungi dia bantu masimu! Nsoni ze! Yenda kwakà!... Dio tia di bundu di fundisa bantu ka Nzambi télé ti kalu fundisadi ! Bwe di bundu di léndi yokela biblia?... Bio binzambi nzambi>>.", "fr": "Il entre en des fils de Bélial pour dire : « Quelle est cette église où l'on confesse publiquement ses péchés ! C'est trop honteux ! Va ailleurs ! … Quelle est cette église qui juge les gens alors que Dieu dit de ne pas juger ! Comment une église peut-elle brûler une bible ? … C'est une secte »."}, {"n": 9, "lari": "Ni ku koté kwa ya bo ba lembolo na ngolo ka iokelanka mpé lumbu, Satana bo ka sampirika boka ntati mu bala ba bala ba nioka: <<ti! wama tieleka Nzambi waka télé ti biblia dia Louis Segond diena dia mbote ko>>? Mpé Éva nika kuta mwa tangu kà taléno nioka kamu bakila: << Mbô ti biblia dia Louis Segond diena dia mbote ko Mpé waka twikisi néti bo bwa tawata, ngana ni mu nta ti fweni dia ioka ? Wama tieleka Nzambi waka télé ti>>? Mpé Éva jimbakane, mpe nioka lendi : << kalu yiokandi dio! Yimineno dio kwa!>>.", "fr": "Et c'est toujours du côté des faibles qu'il passe et un jour, Satan se dévoilera disant par les arrière-petits-fils du serpent : « Quoi ! Dieu a-t-Il réellement dit que la bible Louis Segond n'est pas bonne » ? Et Ève a résisté un moment mais voici où le serpent va l'avoir : « Mais si la bible Louis Segond n'est pas bonne et qu'il l'a prouvé comme tu le dis, est-ce pour autant qu'il faut la brûler ? Dieu a-t-Il réellement dit cela » ? Et Ève est désorientée, et le serpent continue : « Ne la brûlez pas ! Déconseillez-la simplement ! »."}, {"n": 10, "lari": "Mpé néti mu ntsaba ya Éden,Satana mbo ka mvutu bwa sa mu bala ba nioka bô ba tanka tsi bawu ba <<chrétiens>>. Satana mbôka bonga mambu ma mpé buka ta tsi :<<mio mika tata, mwabu tseleka mò bwena kà ngana konso muntu fwena katuka mu dibundu diandi mu kwénda ku iandi? Nzambi mu kati dia iandi kwa ka Sadidi mpé ka lendia ka nata bantu baba nso ku iandi ko. Ni ku Christo ba fweti nata bantu !>>lu mweni? mio mika tata mi delakene na butieleka kà zu dia nioka kwa diena. [Ndr: Di bundu di télé<<Amen!>>]", "fr": "Et comme dans le jardin d'Éden, Satan le fera encore par les fils du serpent se disant « chrétiens ». Le serpent prendra ce Message et dira : « Ce qu'il dit, il y a des choses vraies dedans mais est-ce pour autant que tout le monde doit quitter son église pour venir auprès de lui ? Dieu a tout juste œuvré au travers de lui et il ne doit pas conduire tout le monde à lui. C’est à Christ qu’il faut conduire les gens ! ». Vous voyez ? Ce qu’il dit paraît vrai mais c’est un sifflement de serpent. [Ndr : l’assemblée dit : « Amen ! »]."}, {"n": 11, "lari": "Béno lu fwakané mu katuka mu nzo nzambi zéno catholique, protestant, evangelique mpe branhamiste mu kwiza mu mambu mà, mu kwiza ku mBikudi ya moyo ya ntangw'eno.[Ndr:Di bundu di télé:<<Amen!>>].Èva wa fwanakana mubà ga lweka lwa Adami. Mpe ntangu zanza'nso Èva zaka keti bà ga lweka lwa Adami ,ka ketia longa kô. Tima ni tio kwa lu fweni sa mu ntambula lu Zingu lwa mankululu . Ni mu bo Nzambi kata lu tambidila. Béno ba lwengese! [Ndr:Di bundu di télé :<<Amen!>>].", "fr": "Vous devez quitter vos églises catholiques, protestantes, évangéliques et branhamistes et venir à ce Message, venir auprès du prophète vivant de votre temps. [Ndr : l’assemblée dit : « Amen ! »]. Ève devait rester auprès d’Adam. Et aussi longtemps que Ève restait auprès d’Adam, elle ne péchait pas. C’est la seule chose que vous devez faire pour avoir la Vie éternelle. Et c’est à cela que Dieu vous appelle. Vous êtes avertis ! [Ndr : l’assemblée dit : « Amen ! »]."}, {"n": 12, "lari": "Bata ku Noa Ébu :<<Ta zolo ta tsi ni nge kaka kwa we mu butieleka? Mbô Adam, Abel , Henock, mpe bô babansoni ba fwa avant nge >>mia bata ku Mfumu Yésu-Christo, ku ba mbikudi, ku bilandi mpe mu ntangu yi ku béto neti butieleka bo'le bwe. Bata ébu: <<Noa! donc mu toto wa mvimba, tala muntu ka kotela mu bwatu bwaku kô, Nzambi bo ka mu diamisa mu mvula >>. Bu bedi seka mpe bedi seka Noa. Mpé mpila mosi kwa lumbu tsi.", "fr": "Ils ont dit à Noé : « Tu veux dire que c'est toi seul qui es dans la vérité ? Et Adam, Abel, Hénoc, et tous ceux qui sont morts avant toi » Ils ont dit cela au Seigneur Jésus-Christ, aux prophètes, aux apôtres et maintenant à nous comme s'il y a deux vérités. Ils ont dit : « Noé ! Donc sur toute la terre, si quelqu'un n'entre pas dans ton arche, Dieu va l'engloutir dans le déluge » Ils riaient et se moquaient de Noé. Et c'est la même chose aujourd'hui."}, {"n": 13, "lari": "Mbô ba seka mpe mbô ba seka mu nzo nzambi zawu, ku bi salu biawu,mu nzo zawu. Mbô ba ta: << tia fwaso mu toto ti wa mvimba ,ni mu iandi kwa Kacou Philippe tu fweni kwikila mu bvuka? kani ! Nzambi kalendia kata bokò! Mvukisi ni Yésu-Christo.Ni iandi wa fwa ga kulusu. Ni iandi wa tu kula. Mu sumuki néti nge kacou Philippe, ngana ni nge tu kula bùbù? bwe na bwe mita zolo ta mio? Nzambi wa ma tieleka ni bo kata mu lumbu tia 24 Avril 1993>>? Wa ma tieleka kundi , Nzambi ni bo Kata!", "fr": "Ils rient et se moquent dans leurs églises, dans leurs bureaux, dans leurs maisons. Ils disent : « Comment sur toute la face de la terre, c’est en lui seul Kacou Philippe que nous devons croire pour être sauvés ? Non ! Dieu ne peut pas dire cela ! Le Sauveur c’est Jésus-Christ. C’est lui qui est mort sur la croix. C’est lui qui nous a rachetés. Un pécheur comme toi Kacou Philippe, est-ce toi qui vas nous sauver maintenant ? Qu’est-ce que cela veut dire ? Dieu a-t-Il réellement dit cela le 24 avril 1993 » ? Oui monsieur, Dieu l’a dit !"}, {"n": 14, "lari": "Mpila mosi Mari ka butidi mu bimangu kani bakala ka zaba, Mpila mosi Mosé ka tabudi mio mia maso ma yoka ku mbandukulu nge mpe tabudi mambu ma Imvu na imvu lumbu tia 24 Avril 1993 mpe mikangamané ku Nzambi, ntangu bu yi lunga mbu bakuswa mpe bô longa mio miowa lombo longoka kansi konso muntu kwikila ka tabumbula moyo wa Imvu na imvu. Di bundu di télé<<Amen>> Nzambi waka ku Noa, Nzambi waka ku Mosé, Nzambi waka ku ba bikudi babo nsoni mu ntangwa wu.", "fr": "« De la même manière que Marie a conçu miraculeusement sans connaître d’homme, de la même manière que Moïse a reçu dans les détails ce qui s’est passé à la création, toi aussi tu as reçu les Paroles de la Vie éternelle ce 24 avril 1993 et cela est arrêté de la part de Dieu. Au temps marqué, tu comprendras et tu enseigneras ce que tu n’as pas appris afin que quiconque croit, ait la Vie éternelle. ». [Ndr : l’assemblée dit : « Amen ! »]. Dieu l’avait dit à Noé. Dieu l’avait dit à Moïse, Dieu avait dit à tous les prophètes en leur temps."}, {"n": 15, "lari": "Mpé lumbu ti, Nzambi waka télé ku bikudi kacou Philippe mu lumbu tia 24 Avril 1993. Mpe ti lwena mwana Nzambi, ni mu iandi, kacou Philippe lu fweni kwikila mu mvuka. Mboko ti wa tieleka Mpeve ya longo ye neno, Mpeve yo ya longo mbo yi lu nata ku iandi, bikudi ya ntangw'eno, néti ti lumbu, Mpeve yo ya longo ya nata Corneille ku Pierre iandi wa ba na mvungula za maZulu. Di bundu di télé<<Amen>> . Mbô ti weneno lwa sadila Nzambi, ni mu wakasa nsangu za mio mi télé bikudi kacou Philippe, bikudi ya moyo ya ntangu yi: mpé ni xi kwa lu fweni sa>>", "fr": "Et aujourd’hui, Dieu l’a dit au prophète Kacou Philippe le 24 avril 1993. Et si vous êtes un enfant de Dieu, c’est en lui, Kacou Philippe que vous devez croire pour être sauvé. Et si vous avez réellement le Saint-Esprit, ce Saint-Esprit vous conduira à lui, le prophète de votre temps, comme un jour, ce Saint-Esprit a conduit Corneille vers Pierre qui avait les clés du Royaume des Cieux. [Ndr : l’assemblée dit : « Amen ! »]. Et si vous devez servir Dieu, c’est de faire l’écho de ce que le prophète Kacou Philippe, le prophète vivant de votre temps dit. Et c’est la seule chose que vous puissiez faire."}, {"n": 16, "lari": "Or Satana ka kwiza kwa mu nzonzolo ko kà na mu mabanza, Satana mbôka ta kala fweti ku manima mu ntomo tala Satana mbôka dinga mu lu nata mala na di bundu, ngati ka luzimbangasa kulu bika di, kani nsamu ka lumangisa kadi ku nzo nzambi tala ka lwena na mpemba ya fwanakana ko, Bikeno dila zanza nsoni mu kweda yo ya Nzambi, Solone lwa sala mu kumbisa Nzambi ké lwendi lwa kumbisa mvumbi.", "fr": "Or Satan ne viendra pas seulement en parole mais aussi en pensée. Satan dira : « Prends un peu de recul pour bien voir ! ». Satan cherchera à vous éloigner de l'assemblée pour vous éteindre. Ne cédez jamais ! Pour rien au monde, ne manquez jamais à un culte sauf pour une raison juste. Annulez tous les rendez-vous pour être à celui de Dieu. Choisissez de rester pour adorer Dieu plutôt que d'aller enterrer un mort. Et que celui qui a des oreilles pour entendre entende !"}]}]};
+const ALL = [];
+DATA.categories.forEach((c, ci) => c.entrees.forEach((e, ei) => ALL.push({ id: ci + "-" + ei, cat: c.nom, fr: e.fr, lari: e.lari, ref: e.ref })));
+const norm = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[\u2019\u2018\u00b4`]/g, "'");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+let store = {};
+try { store = JSON.parse(localStorage.getItem("kilari") || "{}"); } catch (e) { store = {}; }
+store.known = store.known || {};
+const save = () => { try { localStorage.setItem("kilari", JSON.stringify(store)); } catch (e) {} };
+
+const S = {
+  tab: "mots", dir: "fr", q: "", cat: "",
+  fcScope: "", fc: null,
+  qzScope: "", qz: null,
+  tx: { open: null, shown: {} }
+};
+document.getElementById("meta").textContent = DATA.meta.entrees + " mots et phrases · " + DATA.meta.categories + " thèmes · " + DATA.textes.length + " texte" + (DATA.textes.length > 1 ? "s" : "");
+
+const dirSeg = () => `<div class="seg" role="group" aria-label="Sens">
+  <button data-act="dir" data-v="fr" aria-pressed="${S.dir === "fr"}">Français → Lari</button>
+  <button data-act="dir" data-v="la" aria-pressed="${S.dir === "la"}">Lari → Français</button></div>`;
+const catOptions = (sel, extra) => `<option value="">Tous les thèmes</option>` + (extra || "") +
+  DATA.categories.map(c => `<option value="${esc(c.nom)}" ${sel === c.nom ? "selected" : ""}>${esc(c.nom)} (${c.entrees.length})</option>`).join("");
+const src = e => S.dir === "fr" ? e.fr : e.lari;
+const dst = e => S.dir === "fr" ? e.lari : e.fr;
+const dstCls = () => S.dir === "fr" ? "is-lari" : "";
+const srcCls = () => S.dir === "la" ? "is-lari" : "";
+
+function nmap(text) {
+  let n = "", map = [];
+  for (let i = 0; i < text.length; i++) { const s = norm(text[i]); for (let j = 0; j < s.length; j++) { n += s[j]; map.push(i); } }
+  return { n, map };
+}
+function excerpt(text, q) {
+  const m = nmap(text), k = m.n.indexOf(q);
+  if (k < 0) return null;
+  const s = m.map[k], e = m.map[k + q.length - 1] + 1;
+  const a = Math.max(0, s - 70), b = Math.min(text.length, e + 90);
+  return (a > 0 ? "… " : "") + esc(text.slice(a, s)) + "<mark>" + esc(text.slice(s, e)) + "</mark>" + esc(text.slice(e, b)) + (b < text.length ? " …" : "");
+}
+function textHits(qn) {
+  if (qn.length < 3) return [];
+  const out = [];
+  DATA.textes.forEach((t, ti) => t.paragraphes.forEach(p => {
+    const f = excerpt(p.fr, qn), l = excerpt(p.lari, qn);
+    if (f || l) out.push({ ti: ti, n: p.n, titre: t.titre_fr, f: f, l: l });
+  }));
+  return out;
+}
+function results() {
+  const qn = norm(S.q).replace(/\s+/g, " ").trim();
+  const list = ALL.filter(e => (!S.cat || e.cat === S.cat) && (!qn || norm(e.fr).includes(qn) || norm(e.lari).includes(qn)));
+  return { list: list, hits: S.cat ? [] : textHits(qn) };
+}
+function hitsHTML(hits) {
+  if (!hits.length) return "";
+  return `<div class="group">Dans les textes</div>` + hits.map(h => `<div class="entry"><div class="a">${esc(h.titre)} · paragraphe ${h.n}</div>
+    ${h.f ? `<div class="hit"><span class="lg">FR</span>${h.f}</div>` : ""}${h.l ? `<div class="hit"><span class="lg">Lari</span>${h.l}</div>` : ""}
+    <button class="tog" data-act="tgo" data-ti="${h.ti}" data-n="${h.n}">Lire ce paragraphe et sa traduction</button></div>`).join("");
+}
+function resultsHTML(r) { return listHTML(r.list, r.hits.length > 0) + hitsHTML(r.hits); }
+function countText(r) { const n = r.list.length + r.hits.length; return n + " résultat" + (n > 1 ? "s" : ""); }
+function renderMots() {
+  const r = results();
+  document.getElementById("view").innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">
+    <input id="q" class="field" type="search" placeholder="Chercher un mot, une expression ou une phrase" value="${esc(S.q)}" autocomplete="off">
+    <div class="row">${dirSeg()}</div>
+    <div class="chips">${[["", "Tout"]].concat(DATA.categories.map(c => [c.nom, c.nom])).map(([v, l]) =>
+      `<button class="chip" data-act="cat" data-v="${esc(v)}" aria-pressed="${S.cat === v}">${esc(l)}</button>`).join("")}</div>
+    <div class="count" id="cnt">${countText(r)}</div><div id="list">${resultsHTML(r)}</div></div>`;
+}
+function listHTML(list, hasHits) {
+  if (!list.length) return hasHits ? "" : `<div class="empty">Aucun résultat. Essayez un autre mot ou un autre thème.</div>`;
+  let last = null, out = "";
+  list.forEach(e => {
+    if (e.cat !== last) { out += `<div class="group">${esc(e.cat)}</div>`; last = e.cat; }
+    out += `<div class="entry"><div class="a ${srcCls()}">${esc(src(e))}</div><div class="b ${dstCls()}">${esc(dst(e))}</div>${e.ref ? `<div class="count">${esc(e.ref)}</div>` : ""}</div>`;
+  });
+  return out;
+}
+function refreshList() {
+  const r = results();
+  document.getElementById("list").innerHTML = resultsHTML(r);
+  document.getElementById("cnt").textContent = countText(r);
+}
+
+/* ---------- Fiches ---------- */
+function poolFor(scope) {
+  if (scope === "__todo") return ALL.filter(e => !store.known[e.id]);
+  return ALL.filter(e => !scope || e.cat === scope);
+}
+function startFc() { S.fc = { deck: shuffle(poolFor(S.fcScope)), i: 0, flip: false, got: 0 }; }
+function renderFiches() {
+  if (!S.fc) startFc();
+  const f = S.fc, known = Object.keys(store.known).length;
+  let html = `<div style="display:flex;flex-direction:column;gap:12px">
+    <select id="fcScope" class="field" aria-label="Thème des fiches">${catOptions(S.fcScope, `<option value="__todo" ${S.fcScope === "__todo" ? "selected" : ""}>Mots pas encore sus</option>`)}</select>
+    <div class="row" style="justify-content:space-between">${dirSeg()}<span class="count">${known} / ${ALL.length} sus</span></div>`;
+  if (!f.deck.length) {
+    html += `<div class="panel"><h2>Rien à réviser ici</h2><p class="sub">Tous les mots de ce choix sont marqués comme sus.</p><button class="btn" data-act="resetKnown">Remettre à zéro la progression</button></div>`;
+  } else if (f.i >= f.deck.length) {
+    html += `<div class="panel"><h2>Série terminée</h2><div class="score">${f.got} / ${f.deck.length}</div><p class="sub">mots sus du premier coup.</p><button class="btn" data-act="fcRestart">Recommencer</button></div>`;
+  } else {
+    const e = f.deck[f.i];
+    html += `<div class="bar" aria-hidden="true"><i style="width:${Math.round(f.i / f.deck.length * 100)}%"></i></div>
+    <button class="card" data-act="flip" aria-label="Retourner la fiche">
+      <span class="tag">${esc(e.cat)}</span>
+      <span class="big ${f.flip ? dstCls() : srcCls()}">${esc(f.flip ? dst(e) : src(e))}</span>
+      <span class="hint">${f.flip ? "" : "Touchez pour voir la réponse"}</span>
+    </button>
+    <div class="count">Fiche ${f.i + 1} sur ${f.deck.length}</div>`;
+    if (f.flip) html += `<div class="btns"><button class="btn alt" data-act="again">À revoir</button><button class="btn" data-act="know">Je sais</button></div>`;
+  }
+  document.getElementById("view").innerHTML = html + "</div>";
+}
+
+/* ---------- Quiz ---------- */
+function startQz() {
+  const pool = shuffle(poolFor(S.qzScope)).slice(0, 10);
+  S.qz = { qs: pool, i: 0, score: 0, picked: null, opts: null };
+}
+function makeOpts(e) {
+  const ans = dst(e);
+  const others = shuffle(ALL.filter(x => dst(x) !== ans && x.id !== e.id)).map(dst);
+  const uniq = [];
+  for (const o of others) { if (!uniq.includes(o)) uniq.push(o); if (uniq.length === 3) break; }
+  return shuffle([ans].concat(uniq));
+}
+function renderQuiz() {
+  if (!S.qz) startQz();
+  const z = S.qz;
+  let html = `<div style="display:flex;flex-direction:column;gap:12px">
+    <select id="qzScope" class="field" aria-label="Thème du quiz">${catOptions(S.qzScope)}</select>
+    <div class="row">${dirSeg()}</div>`;
+  if (z.i >= z.qs.length) {
+    html += `<div class="panel"><h2>Quiz terminé</h2><div class="score">${z.score} / ${z.qs.length}</div>
+      <p class="sub">${z.score === z.qs.length ? "Sans faute." : "Relancez un quiz pour progresser."}</p><button class="btn" data-act="qzRestart">Nouveau quiz</button></div>`;
+  } else {
+    const e = z.qs[z.i];
+    if (!z.opts) z.opts = makeOpts(e);
+    const ans = dst(e);
+    html += `<div class="bar" aria-hidden="true"><i style="width:${Math.round(z.i / z.qs.length * 100)}%"></i></div>
+      <div class="count">Question ${z.i + 1} sur ${z.qs.length} · score ${z.score}</div>
+      <div class="panel"><span class="count">Traduire</span><div class="q ${srcCls()}">${esc(src(e))}</div></div>
+      <div class="opts">${z.opts.map((o, k) => {
+        let cls = "opt";
+        if (z.picked !== null) { if (o === ans) cls += " good"; else if (k === z.picked) cls += " wrong"; }
+        return `<button class="${cls}" data-act="pick" data-k="${k}" ${z.picked !== null ? "disabled" : ""}>${esc(o)}</button>`;
+      }).join("")}</div>`;
+    if (z.picked !== null) html += `<button class="btn" data-act="next">${z.i + 1 >= z.qs.length ? "Voir le score" : "Question suivante"}</button>`;
+  }
+  document.getElementById("view").innerHTML = html + "</div>";
+}
+
+/* ---------- Textes ---------- */
+function renderTextes() {
+  const T = DATA.textes, v = document.getElementById("view");
+  if (S.tx.open === null) {
+    v.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px"><h2>Textes</h2>
+      <p class="sub">Lisez le texte en lari, puis touchez un paragraphe pour voir sa traduction en français.</p>
+      ${T.map((x, i) => `<button class="panel textcard" data-act="topen" data-v="${i}"><h3>${esc(x.titre_fr)}</h3>
+        <span class="is-lari-txt">${esc(x.titre_lari)}</span><span class="count">${x.paragraphes.length} paragraphes</span></button>`).join("")}</div>`;
+    return;
+  }
+  const x = T[S.tx.open], all = x.paragraphes.every(p => S.tx.shown[p.n]);
+  v.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">
+    <div class="row" style="justify-content:space-between"><button class="btn alt" data-act="tback">← Textes</button>
+    <button class="btn alt" data-act="tall">${all ? "Masquer tout" : "Tout traduire"}</button></div>
+    <h2 class="is-lari-txt">${esc(x.titre_lari)}</h2><div class="sub">${esc(x.titre_fr)}</div>
+    ${x.paragraphes.map(p => `<div class="para" id="p${p.n}"><span class="pn">${p.n}</span>
+      <p class="lt">${esc(p.lari)}</p>
+      <button class="tog" data-act="tpar" data-v="${p.n}" aria-expanded="${!!S.tx.shown[p.n]}">${S.tx.shown[p.n] ? "Masquer la traduction" : "Voir la traduction"}</button>
+      ${S.tx.shown[p.n] ? `<p class="ft">${esc(p.fr)}</p>` : ""}</div>`).join("")}</div>`;
+}
+
+/* ---------- Grammaire ---------- */
+function renderGram() {
+  const g = DATA.grammaire;
+  document.getElementById("view").innerHTML = `<div class="gr">
+    <h2>Les classes nominales</h2>
+    <p class="sub">Le préfixe d'un nom indique sa classe, comme pour les autres langues bantoues.</p>
+    ${g.classes_nominales.map(c => `<div class="panel"><div class="cls"><span class="pre">${esc(c.prefixe)}</span><h3>${esc(c.classe)}</h3></div>
+      <div class="ex">${esc(c.fr)} : <b>${esc(c.lari)}</b></div></div>`).join("")}
+    <h2 style="margin-top:8px">Règles</h2>
+    ${g.regles.map(r => `<div class="panel"><h3>${esc(r.titre)}</h3><p style="margin:0">${esc(r.texte)}</p>
+      ${r.exemples.map(x => `<div class="ex">${esc(x.fr)} : <b>${esc(x.lari)}</b>${x.detail ? `<div class="det">${esc(x.detail)}</div>` : ""}</div>`).join("")}</div>`).join("")}
+  </div>`;
+}
+
+function render() {
+  document.querySelectorAll("nav.tabs button").forEach(b => b.toggleAttribute("aria-current", b.dataset.v === S.tab) || b.removeAttribute("aria-current"));
+  document.querySelectorAll("nav.tabs button").forEach(b => { if (b.dataset.v === S.tab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+  ({ mots: renderMots, fiches: renderFiches, quiz: renderQuiz, textes: renderTextes, gram: renderGram })[S.tab]();
+}
+
+document.addEventListener("click", ev => {
+  const t = ev.target.closest("[data-act]"); if (!t) return;
+  const a = t.dataset.act, v = t.dataset.v, f = S.fc, z = S.qz;
+  if (a === "tab") { S.tab = v; window.scrollTo(0, 0); }
+  else if (a === "tgo") { S.tab = "textes"; S.tx.open = +t.dataset.ti; S.tx.shown = {}; S.tx.shown[t.dataset.n] = true; S.tx.focus = t.dataset.n; }
+  else if (a === "topen") { S.tx.open = +v; S.tx.shown = {}; window.scrollTo(0, 0); }
+  else if (a === "tback") { S.tx.open = null; window.scrollTo(0, 0); }
+  else if (a === "tpar") { S.tx.shown[v] = !S.tx.shown[v]; }
+  else if (a === "tall") { const ps = DATA.textes[S.tx.open].paragraphes; const all = ps.every(p => S.tx.shown[p.n]); ps.forEach(p => { S.tx.shown[p.n] = !all; }); }
+  else if (a === "dir") { S.dir = v; if (S.qz) { S.qz.opts = null; S.qz.picked = null; } }
+  else if (a === "cat") { S.cat = v; }
+  else if (a === "flip") { f.flip = !f.flip; }
+  else if (a === "know") { const e = f.deck[f.i]; store.known[e.id] = 1; save(); if (!e.retry) f.got++; f.i++; f.flip = false; }
+  else if (a === "again") { const e = f.deck[f.i]; delete store.known[e.id]; save(); f.deck.push(Object.assign({}, e, { retry: true })); f.i++; f.flip = false; }
+  else if (a === "fcRestart") { startFc(); }
+  else if (a === "resetKnown") { store.known = {}; save(); S.fcScope = ""; startFc(); }
+  else if (a === "pick") { if (z.picked === null) { z.picked = +t.dataset.k; if (z.opts[z.picked] === dst(z.qs[z.i])) z.score++; } }
+  else if (a === "next") { z.i++; z.picked = null; z.opts = null; }
+  else if (a === "qzRestart") { startQz(); }
+  render();
+  if (S.tx.focus) { const el = document.getElementById("p" + S.tx.focus); S.tx.focus = null; if (el) el.scrollIntoView(); }
+});
+document.addEventListener("input", ev => {
+  if (ev.target.id === "q") { S.q = ev.target.value; refreshList(); }
+});
+document.addEventListener("change", ev => {
+  if (ev.target.id === "fcScope") { S.fcScope = ev.target.value; startFc(); render(); }
+  if (ev.target.id === "qzScope") { S.qzScope = ev.target.value; startQz(); render(); }
+});
+render();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}
+</script>
+</body>
+</html>
