@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kilâri</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+/* Layout: une colonne mobile, navigation fixe en bas, quatre modes (mots, fiches, quiz, grammaire). */
+:root {
+  --bg: #f1f4ef;
+  --surface: #ffffff;
+  --fg: #12251d;
+  --muted: #5b6e64;
+  --line: #d6ddd5;
+  --accent: #1c7a4b;
+  --accent-ink: #ffffff;
+  --sun: #f0b323;
+  --ok: #1c7a4b;
+  --bad: #b8372b;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1a15; --surface: #16261f; --fg: #e6efe9; --muted: #93a79c; --line: #284034;
+    --accent: #4fc487; --accent-ink: #062416; --sun: #f3c24a; --ok: #4fc487; --bad: #ee7a6c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1a15; --surface: #16261f; --fg: #e6efe9; --muted: #93a79c; --line: #284034;
+  --accent: #4fc487; --accent-ink: #062416; --sun: #f3c24a; --ok: #4fc487; --bad: #ee7a6c;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.45;
+  padding-block: 0 88px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+header.top { padding-top: 20px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: 2.1rem; line-height: 1; margin: 0; letter-spacing: -0.02em; }
+h1 span { color: var(--accent); }
+.sub { color: var(--muted); font-size: 0.9rem; }
+.stripe { height: 5px; border-radius: 3px; background: linear-gradient(90deg, var(--accent) 0 34%, var(--sun) 34% 67%, var(--bad) 67% 100%); }
+h2 { font-family: var(--font-display); font-size: 1.25rem; margin: 0; text-wrap: balance; }
+h3 { font-family: var(--font-display); font-size: 1rem; margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+.field {
+  width: 100%; padding: 12px 14px; font: inherit; color: var(--fg);
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: 10px;
+}
+select.field { appearance: auto; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.seg { display: inline-flex; border: 1.5px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 9px 14px; font-weight: 700; font-size: 0.9rem; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.chip { flex: none; border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 0.85rem; color: var(--muted); }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.count { color: var(--muted); font-size: 0.85rem; }
+.group { font-family: var(--font-display); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin: 10px 0 2px; }
+.entry { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; display: flex; flex-direction: column; gap: 2px; }
+.entry + .entry { margin-top: 6px; }
+.entry .a { font-size: 0.9rem; color: var(--muted); overflow-wrap: anywhere; }
+.entry .b { font-family: var(--font-display); font-weight: 600; font-size: 1.15rem; color: var(--fg); overflow-wrap: anywhere; }
+.entry .b.is-lari { color: var(--accent); }
+.empty { color: var(--muted); padding: 24px 0; text-align: center; }
+/* fiches */
+.card {
+  width: 100%; min-height: 220px; background: var(--surface); border: 1.5px solid var(--line); border-radius: 18px;
+  padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center;
+  box-shadow: 0 6px 0 var(--line);
+}
+.card .tag { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.card .big { font-family: var(--font-display); font-weight: 800; font-size: 1.9rem; line-height: 1.15; overflow-wrap: anywhere; text-wrap: balance; }
+.card .big.is-lari { color: var(--accent); }
+.card .hint { color: var(--muted); font-size: 0.85rem; }
+.bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.btn { border: 0; border-radius: 10px; padding: 12px 18px; font-weight: 700; background: var(--accent); color: var(--accent-ink); }
+.btn.alt { background: var(--surface); color: var(--fg); border: 1.5px solid var(--line); }
+.btn.bad { background: var(--bad); color: #fff; }
+.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btns .full { grid-column: 1 / -1; }
+/* quiz */
+.opts { display: grid; gap: 8px; }
+.opt { text-align: left; background: var(--surface); border: 1.5px solid var(--line); border-radius: 10px; padding: 13px 14px; font-weight: 700; overflow-wrap: anywhere; }
+.opt.good { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 16%, var(--surface)); }
+.opt.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--surface)); }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.q { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; overflow-wrap: anywhere; text-wrap: balance; }
+.score { font-family: var(--font-display); font-size: 3rem; font-weight: 800; color: var(--accent); }
+/* grammaire */
+.gr { display: grid; gap: 10px; }
+.cls { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: baseline; }
+.pre { font-family: var(--font-display); font-weight: 800; font-size: 1.4rem; color: var(--accent); }
+.ex { background: var(--bg); border-radius: 8px; padding: 8px 10px; }
+.ex b { color: var(--accent); }
+.det { color: var(--muted); font-size: 0.85rem; }
+nav.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--surface); border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+}
+nav.tabs button { border: 0; background: transparent; padding: 10px 4px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; color: var(--muted); }
+nav.tabs button[aria-current="page"] { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); color: var(--accent); }
+@media (prefers-reduced-motion: no-preference) { .bar > i { transition: width .25s; } }
+</style>
+
+<meta name="theme-color" content="#1c7a4b">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Apprendre le lari : dictionnaire, fiches, quiz et grammaire, sans connexion.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>html{color-scheme:light dark}body{margin:0}</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Kil<span>â</span>ri</h1>
+      <div class="sub" id="meta"></div>
+    </div>
+  </header>
+  <div class="stripe" aria-hidden="true"></div>
+  <main id="view"></main>
+</div>
+<nav class="tabs" aria-label="Sections">
+  <button data-act="tab" data-v="mots">Mots</button>
+  <button data-act="tab" data-v="fiches">Fiches</button>
+  <button data-act="tab" data-v="quiz">Quiz</button>
+  <button data-act="tab" data-v="gram">Grammaire</button>
+</nav>
+
+<script>
+const DATA = {"meta": {"langue": "Lari (Congo-Brazzaville)", "entrees": 335, "categories": 30}, "categories": [{"nom": "Salutations et mots-clés", "entrees": [{"fr": "Oui", "lari": "hê"}, {"fr": "Non", "lari": "kâni"}, {"fr": "Et", "lari": "na"}, {"fr": "Bonjour", "lari": "mboté"}, {"fr": "Merci", "lari": "matôndo, ntôndélé"}, {"fr": "Au revoir", "lari": "sala ou saléno (si l'on s'adresse à plusieurs personnes)"}, {"fr": "Bonsoir", "lari": "mboté"}]}, {"nom": "Expressions usuelles", "entrees": [{"fr": "Qui es-tu ?", "lari": "ngué nani ?"}, {"fr": "Où est-il ?", "lari": "Kwe kena ?"}, {"fr": "Que fais-tu ?", "lari": "(ngué) nti ta sà ?"}, {"fr": "Que fait-il ?", "lari": "(yandi) nti ka ta sà ?"}, {"fr": "Quand pars-tu ?", "lari": "(ngué) Tîa tangu kwenda ?"}, {"fr": "Quand arrives-tu ?", "lari": "(ngué) Tîa tangu tula ?"}, {"fr": "Où vas-tu ?", "lari": "kué ta kwénda ?"}, {"fr": "D'où viens-tu ?", "lari": "kué tûkidi ?"}, {"fr": "Comment fait-il ? ou Qu'a-t-il fait ?", "lari": "bwé ka sidi ?"}, {"fr": "Pourquoi ?", "lari": "munti ?"}, {"fr": "Combien coûte cette chose ?", "lari": "timâ-tî ntia ntalu tié ?"}, {"fr": "Où habite X ?", "lari": "kwé ka bâ ka (muatu) ou kwé ka bêla ka (muatu)"}, {"fr": "Comment allez vous ?", "lari": "lu kolélé ?"}, {"fr": "Parlez vous Français ?", "lari": "lumputu lwa lu zébi ?"}, {"fr": "Parlez vous Lâri ?", "lari": "Lâri tîa lu zébi ?"}, {"fr": "Je ne comprends pas Lâri", "lari": "ka nzébia Lâri ko"}, {"fr": "Excusez moi", "lari": "léémvo'éno"}, {"fr": "Je ne peux pas", "lari": "ka ni léenda ko"}, {"fr": "Conduisez-moi à ... en voiture", "lari": "nat'éno ku ... ou mu voiture"}, {"fr": "Arrêtez-vous ici", "lari": "kangam'éno hà"}, {"fr": "Attendez moi ici", "lari": "nkêl'éno hà"}, {"fr": "Montrez moi", "lari": "nsônguil'éno"}, {"fr": "Je désire", "lari": "nzôlolo"}, {"fr": "Où vas-tu ce matin ?", "lari": "kué ta kwénda mu pàri ?"}, {"fr": "Quelle heure est-il ?", "lari": "ntia ntangu yena"}, {"fr": "Il est 7 heures 30 min", "lari": "yéka 7 heures 30 min"}, {"fr": "Je vais à l'école", "lari": "diele ku luko"}]}, {"nom": "Les excuses et bénédictions", "entrees": [{"fr": "que Dieu te bénisse", "lari": "nzâmbi ka ku sakumuna"}, {"fr": "que Dieu te protège", "lari": "nzâmbi ka ku tênséka kôko (litt. que Dieu te tienne la main)"}, {"fr": "demander pardon", "lari": "lômba lêmvo"}, {"fr": "pardon !", "lari": "lêmvo !"}, {"fr": "pardonne moi", "lari": "lêmvwaku !"}, {"fr": "je ne vais plus le faire", "lari": "ni vutwa karila kô"}, {"fr": "Que Dieu t'accompagne", "lari": "Nzambi ka ku twadisa"}, {"fr": "Je n'ai rien fait", "lari": "ntiria timako"}]}, {"nom": "Interjections", "entrees": [{"fr": "Au secours !", "lari": "mbakisa !"}, {"fr": "Attention !", "lari": "sà mayéla !"}, {"fr": "Silence !", "lari": "luazà !"}, {"fr": "Assez !", "lari": "sà kwâ bo !"}, {"fr": "Va-t-en !", "lari": "yéndâ ! ou katukâ !"}, {"fr": "Tais-toi !", "lari": "kangâ nwà !"}, {"fr": "Stop !", "lari": "kângamá !"}, {"fr": "Arrête !", "lari": "sa kwa bo !"}]}, {"nom": "Temps et calendrier", "entrees": [{"fr": "le temps", "lari": "ntângu (au sens d'heure, de moment, de période, d'époque)"}, {"fr": "année", "lari": "mvula"}, {"fr": "saison", "lari": "muvu"}, {"fr": "mois", "lari": "ngônda"}, {"fr": "semaine", "lari": "lumingu"}, {"fr": "aujourd'hui", "lari": "lumbu-tî ou lolo"}, {"fr": "hier", "lari": "mazôno"}, {"fr": "demain", "lari": "mbazi"}, {"fr": "jour", "lari": "lumbu"}]}, {"nom": "Les jours de la semaine", "entrees": [{"fr": "lundi", "lari": "léndi"}, {"fr": "mardi", "lari": "Märadi"}, {"fr": "mercredi", "lari": "mérécrédi"}, {"fr": "jeudi", "lari": "jédi"}, {"fr": "vendredi", "lari": "vendérédi"}, {"fr": "samedi", "lari": "samédi"}, {"fr": "dimanche", "lari": "lumingu"}]}, {"nom": "Les moments du jour", "entrees": [{"fr": "nuit", "lari": "mpîmpa ou buisi"}, {"fr": "matin", "lari": "pàri/sûka"}, {"fr": "midi", "lari": "midi"}, {"fr": "soir", "lari": "nkôkila"}]}, {"nom": "Exemples de phrases temporelles", "entrees": [{"fr": "je pars demain", "lari": "mbazi ni kwénda"}, {"fr": "je pars après demain", "lari": "muna mbazi ni kwénda"}, {"fr": "je pars lundi", "lari": "léndi ni kwénda"}, {"fr": "quelle heure as-tu ?", "lari": "ntîà ntângu yé nânku ?"}, {"fr": "il est 7h du matin", "lari": "yéka 7h yà padi"}, {"fr": "tu viendras à midi pour qu'on mange", "lari": "mbo kwîzi mu midi ta dià"}]}, {"nom": "Prépositions", "entrees": [{"fr": "à", "lari": "ku"}, {"fr": "arrière", "lari": "ku manima"}, {"fr": "avec", "lari": "na"}, {"fr": "avant", "lari": "ku matu"}, {"fr": "chez", "lari": "kwé"}, {"fr": "jusqu'à", "lari": "tî"}, {"fr": "depuis", "lari": "tuka"}, {"fr": "hors de", "lari": "duka"}, {"fr": "pour", "lari": "mu"}, {"fr": "sans", "lari": "kani"}, {"fr": "sous", "lari": "kunà ou kunsi"}, {"fr": "sur", "lari": "hana ... zulu"}, {"fr": "vers", "lari": "ku"}]}, {"nom": "Adjectifs", "entrees": [{"fr": "affamé", "lari": "nsatu"}, {"fr": "rassasié", "lari": "yukuti"}, {"fr": "bas", "lari": "bânda"}, {"fr": "haut", "lari": "lôndé"}, {"fr": "bon", "lari": "muboté (pour mûntu)"}, {"fr": "mauvais", "lari": "mubi (pour mûntu)"}, {"fr": "cassé", "lari": "budika"}, {"fr": "cher", "lari": "ntalu"}, {"fr": "pas cher", "lari": "fuika"}, {"fr": "court", "lari": "nkufi"}, {"fr": "long", "lari": "là"}, {"fr": "cru", "lari": "nkûnzu"}, {"fr": "cuit", "lari": "yà"}, {"fr": "fatigué", "lari": "fatika"}, {"fr": "endormi", "lari": "ku tolo"}, {"fr": "réveillé", "lari": "wa vumbuka"}, {"fr": "étroit", "lari": "fioti"}, {"fr": "large", "lari": "néné"}, {"fr": "facile", "lari": "kôndo mpasi"}, {"fr": "difficile", "lari": "mpasi"}, {"fr": "faible", "lari": "kôndo ngolo"}, {"fr": "fort", "lari": "nkwa ngolo"}, {"fr": "froid", "lari": "tiozi"}, {"fr": "chaud", "lari": "tiya"}, {"fr": "jeune", "lari": "mwâna"}, {"fr": "vieux", "lari": "mbuta"}, {"fr": "léger", "lari": "pêpé"}, {"fr": "lourd", "lari": "déma"}, {"fr": "lent", "lari": "malémbé"}, {"fr": "rapide", "lari": "ntinu"}, {"fr": "mou", "lari": "tia pêtà (pour tima, une chose)"}, {"fr": "dur", "lari": "tia kubà (pour tima, une chose)"}, {"fr": "mûr", "lari": "bwakà"}, {"fr": "vert", "lari": "mfubà"}, {"fr": "neuf", "lari": "mona"}, {"fr": "usé", "lari": "ntamà"}, {"fr": "petit", "lari": "fioti"}, {"fr": "grand", "lari": "néné"}, {"fr": "possible", "lari": "lénda"}, {"fr": "impossible", "lari": "lombo lénda"}, {"fr": "proche", "lari": "bandakana"}, {"fr": "lointain", "lari": "malà"}, {"fr": "propre", "lari": "ntséma ou bunkété"}, {"fr": "sale", "lari": "mvindou"}, {"fr": "malade", "lari": "bêla"}, {"fr": "sain", "lari": "wasà"}, {"fr": "vide", "lari": "mpamba"}, {"fr": "plein", "lari": "fuluka"}, {"fr": "vrai (pour une affaire, un fait)", "lari": "sàmù"}, {"fr": "faux (pour une affaire, un fait)", "lari": "musàmù ou sàmù"}]}, {"nom": "Les couleurs", "entrees": [{"fr": "Blanc", "lari": "mpêmbé"}, {"fr": "Noir", "lari": "ndômbi"}, {"fr": "Rouge", "lari": "mbwaki"}, {"fr": "Vert", "lari": "ntiana makaya"}]}, {"nom": "Les goûts", "entrees": [{"fr": "Acide", "lari": "nsà"}, {"fr": "Amer", "lari": "ndûndi"}, {"fr": "Salé", "lari": "tiê mungwa"}, {"fr": "Sucré", "lari": "tiê sûkari"}]}, {"nom": "École et vocabulaire académique", "entrees": [{"fr": "L'école/L'université", "lari": "lukolo"}, {"fr": "Le professeur/L'enseignant", "lari": "nlongi"}, {"fr": "L'élève/L'étudiant", "lari": "nlongoki"}, {"fr": "les études", "lari": "mi nkanda"}, {"fr": "Le travail/La tâche", "lari": "kisalu"}, {"fr": "le livre", "lari": "buku"}]}, {"nom": "Phrases complètes", "entrees": [{"fr": "Le professeur enseigne aux élèves ce matin.", "lari": "nlongi nti ta longa balongoki mu pàri."}, {"fr": "J'apprends la langue sur mon ordinateur.", "lari": "nti longoka kilâri mu ordinatèr yani."}, {"fr": "Nous lisons un grand livre.", "lari": "tu ta tânga nkanda wunéné."}]}, {"nom": "Conjugaison : présent (manger)", "entrees": [{"fr": "je mange", "lari": "dia ni ta dia"}, {"fr": "tu manges", "lari": "dia ta dia"}, {"fr": "il/elle mange", "lari": "dia ka ta dia"}, {"fr": "nous mangeons", "lari": "dia tu ta dia"}, {"fr": "vous mangez", "lari": "dia lu ta dia"}, {"fr": "ils/elles mangent", "lari": "dia ba ta dia"}]}, {"nom": "Conjugaison : futur proche (manger)", "entrees": [{"fr": "je vais manger", "lari": "dia ni dia"}, {"fr": "tu vas manger", "lari": "dia ku dia"}, {"fr": "il/elle va manger", "lari": "dia ka dia"}, {"fr": "nous allons manger", "lari": "dia tu dia"}, {"fr": "vous allez manger", "lari": "dia lu dia"}, {"fr": "ils/elles vont manger", "lari": "dia ba dia"}]}, {"nom": "Aliments et objets", "entrees": [{"fr": "une banane", "lari": "dikondi"}, {"fr": "du manioc", "lari": "yaka"}, {"fr": "de l'eau", "lari": "mamba"}, {"fr": "le pain", "lari": "di mpa"}, {"fr": "un fruit", "lari": "mbuntu"}]}, {"nom": "Vue d'ensemble : corps, famille, vie", "entrees": [{"fr": "le corps/les corps", "lari": "nitu/zi nitu"}, {"fr": "le visage/les visages", "lari": "ti diri/bi diri"}, {"fr": "la main/les mains", "lari": "koko/moko"}, {"fr": "le pied/les pieds", "lari": "kilu/malu"}, {"fr": "la famille/les familles", "lari": "kanda/ma kanda"}, {"fr": "l'émotion/les émotions", "lari": "émotion/ zi émotion"}, {"fr": "les évènements de la vie", "lari": "misamu mia luzingu"}, {"fr": "les fêtes", "lari": "matanga"}, {"fr": "les vêtements", "lari": "bituki"}]}, {"nom": "Le corps humain", "entrees": [{"fr": "le cou/les cous", "lari": "ntingu/zi ntingu"}, {"fr": "la poitrine/les poitrines", "lari": "ntulu/zi ntulu"}, {"fr": "le ventre/les ventres", "lari": "moyo/mioyo"}, {"fr": "la tête/les têtes", "lari": "mutu/mitu"}, {"fr": "le sein/les seins", "lari": "beni/mabeni"}, {"fr": "le mamelon/les mamelons", "lari": "mutu wa beni(mutu beni)/mitu mia beni(mitu beni)"}, {"fr": "le nombril/les nombrils", "lari": "mukumba(mu kimba)/mikumba(mi kumba)"}, {"fr": "la cuisse/les cuisses", "lari": "bunda/mabunda(ma bunda)"}, {"fr": "le genou/les genoux", "lari": "koto/makoto( ma koto)"}, {"fr": "la hanche/les hanches", "lari": "luketo/ tuketo"}, {"fr": "le talon/les talons", "lari": "tinkoso(ti nkoso)/binkoso(bi nkoso)"}, {"fr": "le mollet/les mollets", "lari": "mutanga(mu tanga)/mitanga(mi tanga)"}, {"fr": "la fesse/les fesses", "lari": "taku/mataku(ma taka)"}, {"fr": "l'aisselle/les aisselles", "lari": "mpakani/zi mpakani"}, {"fr": "le dos/les dos", "lari": "nima/manima"}, {"fr": "la nuque/les nuques", "lari": "kosi/makosi(ma kosi)"}, {"fr": "la cheville/les chevilles", "lari": "disu dia kulu/meso ma kulu"}, {"fr": "la main/les mains", "lari": "kôkô/moko"}, {"fr": "le coude/les coudes", "lari": "koto/makoto"}, {"fr": "le bras/les bras", "lari": "kôkô/makôkôo"}, {"fr": "la femme/les femmes", "lari": "mu nkento/ ba nkento"}, {"fr": "l'homme/les hommes", "lari": "bakala/ba bakala"}]}, {"nom": "Le visage", "entrees": [{"fr": "le cheveu/les cheveux", "lari": "lusuki(lu suki)/ t'suki"}, {"fr": "la peau/les peaux", "lari": "mu kanda(mukanda)/ mikanda(mi kanda)"}, {"fr": "le nez/les nez", "lari": "mbombo/ zi mbombo"}, {"fr": "la lèvre/les lèvres", "lari": "tikoba(ti koba)"}, {"fr": "l'oeil/les yeux", "lari": "disu/meso"}, {"fr": "la bouche/les bouches", "lari": "munwa/minwa"}, {"fr": "la narine/les narines", "lari": "munwa mbombo/minwa mia mbombo"}, {"fr": "la mâchoire/les mâchoires", "lari": "mbulukutu/mabanga"}, {"fr": "le front/les fronts", "lari": "mbunzu/ zi mbunzu"}, {"fr": "la joue/les joues", "lari": "bundi/ ma bundi(mabundi)"}, {"fr": "l'oreille/les oreilles", "lari": "kûtû/makûtû(ma kûtû)"}, {"fr": "la dent/les dents", "lari": "dinu/méno"}, {"fr": "la langue/les langues", "lari": "ludimi/tudimi"}, {"fr": "le cil/les cils", "lari": "ndabu/zi ndabu"}, {"fr": "le sourcil/les sourcils", "lari": "tsé/zi tsé"}, {"fr": "le menton/les mentons", "lari": "tibanga/mabanga"}]}, {"nom": "La famille", "entrees": [{"fr": "la grand-mère/les grands-mères", "lari": "nkaka ya nkento/nkaka za nkento"}, {"fr": "le grand-père/les grands-pères", "lari": "nkaka ya bakala/nkaka za bakala"}, {"fr": "l'oncle/les oncles", "lari": "ngwa kasi(ngwakasi)/ba ngwakasi(ngwa kasi)"}, {"fr": "la tante/les tents", "lari": "tààa ra nkento/ba tata ba nkento"}, {"fr": "le père/les pères", "lari": "tàtà/ba tàtà"}, {"fr": "la mère/les mères", "lari": "màmà/ ba màmà"}, {"fr": "le frère/les frères", "lari": "nkazi/ ba nkazi"}, {"fr": "la sœur/les sœurs", "lari": "tibusi(ti busi)/bibusi(bi busi)"}, {"fr": "le fils/les fils", "lari": "mwana wa bakala/bàlà wa nkento"}, {"fr": "la fille/les filles", "lari": "mwana wa nkento/bàlà ba nkento"}, {"fr": "le mari/les maris", "lari": "bakala/ ba bakala"}, {"fr": "le petit-fils/les petits-fils", "lari": "mu tékolo wa bakala/ba tékolo ba bakala"}, {"fr": "la petite-fille/les petites-filles", "lari": "mu tékolo wa nkento/ ba tékolo ba nkento"}, {"fr": "le gendre/les gendres", "lari": "kwezi/ba kwezi"}, {"fr": "le neveu/les neveux", "lari": "mwana busi wa bakal/bàlà ba busi ba bakala"}, {"fr": "la belle soeur/les belles soeurs", "lari": "nzari/ ba nzari"}, {"fr": "la belle-mère/les belles-mères", "lari": "màbukô/ba màbukô"}, {"fr": "le beau-père/les beaux-pères", "lari": "tabuko/ba tàbuko"}, {"fr": "la belle-fille/les belles-filles", "lari": "bukô/ ba bukô"}, {"fr": "le bébé/les bébés", "lari": "ntébélé/ba ntébélé"}, {"fr": "l'enfant/les enfants", "lari": "mwana/ bàlà"}, {"fr": "la nièce/les nièces", "lari": "mwana Busi wa nkento/ bàlà ba busi ba nkento"}, {"fr": "l'dolescent(e)/les adolescents(e)", "lari": "mwana fioti/bàlà ba fioti"}]}, {"nom": "Expressions de la famille", "entrees": [{"fr": "les enfants", "lari": "bàlà"}, {"fr": "les parents de la famille", "lari": "kanda"}, {"fr": "les jumeaux", "lari": "ma pasa( au singulier, di pasa"}, {"fr": "Voici mes parents( de la famille)", "lari": "dî ni kanda"}, {"fr": "c'est un bébé", "lari": "wena mwana fioti"}, {"fr": "adulte", "lari": "wa kula"}, {"fr": "c'est ma femme", "lari": "mulumi ani"}]}, {"nom": "Les émotions", "entrees": [{"fr": "heureux", "lari": "nsaï"}, {"fr": "triste", "lari": "tiadi"}, {"fr": "effrayé", "lari": "bunkuta"}, {"fr": "fâché", "lari": "nkési"}, {"fr": "gêné", "lari": "nsoni"}, {"fr": "timide", "lari": "nzuna"}, {"fr": "fier", "lari": "nsaï"}, {"fr": "nerveux", "lari": "miangu"}, {"fr": "ennuyé", "lari": "bukaka"}, {"fr": "confiant", "lari": "kiminu"}, {"fr": "pleurer", "lari": "dila (ce verbe est à l'infinitif"}, {"fr": "crier", "lari": "lwasa"}, {"fr": "choqué", "lari": "mpasi"}]}, {"nom": "Expressions des émotions", "entrees": [{"fr": "il est fâché", "lari": "bakidi nkési"}, {"fr": "il est timide ou calme", "lari": "wa nzuna"}, {"fr": "nous sommes effrayés", "lari": "tweka na bukuta"}, {"fr": "les enfants sont tristes", "lari": "bàlà tiadi tié nawu"}, {"fr": "je suis triste", "lari": "tiadi tiénani"}, {"fr": "il est heureux", "lari": "nsaï yé nandi"}]}, {"nom": "Les évènements de la vie", "entrees": [{"fr": "naitre", "lari": "butuka"}, {"fr": "commencer à l'école", "lari": "batika ku lukolo"}, {"fr": "trouver un emploi", "lari": "baka ti salu"}, {"fr": "se marier", "lari": "kwela"}, {"fr": "le mariage", "lari": "ma kwela"}, {"fr": "avoir un bébé", "lari": "baka mwana"}, {"fr": "obtenir la licence", "lari": "baka licence"}, {"fr": "l'enterrement", "lari": "djiamunu"}, {"fr": "tomber amoureux", "lari": "zola"}, {"fr": "mourir", "lari": "fwa"}, {"fr": "l'acte de naissance", "lari": "nkanda mbutukulu"}, {"fr": "l'anniversaire de mariage", "lari": "anniversaire ya makwela"}, {"fr": "le jeûne", "lari": "djiéna"}, {"fr": "le baptême", "lari": "baptèma"}]}, {"nom": "Les fêtes", "entrees": [{"fr": "jour d'anniversaire", "lari": "lumbu tia mbutukulu"}, {"fr": "la carte", "lari": "ti carte"}, {"fr": "le nouvel An", "lari": "bonabona"}, {"fr": "le défilé", "lari": "ndiatulu"}]}, {"nom": "Les vêtements", "entrees": [{"fr": "le chapeau", "lari": "mpû"}, {"fr": "le slip", "lari": "caliso"}, {"fr": "une chemise", "lari": "chémise"}]}, {"nom": "Vêtements d'enfants", "entrees": [{"fr": "les vêtements d'enfants", "lari": "binkuti bia bàlà"}, {"fr": "le tricot de corps", "lari": "ti nkti tia tiozi"}, {"fr": "le bouton-pression", "lari": "bouton ya dèdè"}, {"fr": "le chapeau de soleil", "lari": "mpu ya mwni"}, {"fr": "la solopette", "lari": "nkala na néna"}, {"fr": "la jupe", "lari": "jupe"}, {"fr": "le tablier", "lari": "tablier"}, {"fr": "le t-shirt", "lari": "t-shirt"}, {"fr": "les chaussons", "lari": "chausson"}]}, {"nom": "Verbes (infinitif)", "entrees": [{"fr": "manger", "lari": "dia"}, {"fr": "chanter", "lari": "tanga"}, {"fr": "danser", "lari": "tina"}, {"fr": "entrer", "lari": "kota"}, {"fr": "tuer", "lari": "wonda"}, {"fr": "prendre", "lari": "bonga"}, {"fr": "cuisiner", "lari": "lamba"}, {"fr": "parler", "lari": "zonza"}, {"fr": "pêcher", "lari": "loba"}, {"fr": "pécher", "lari": "sumuka"}, {"fr": "lire", "lari": "tanga"}, {"fr": "toquer", "lari": "nkonkota"}, {"fr": "brûler", "lari": "yoka"}, {"fr": "conduire", "lari": "nata"}, {"fr": "diriger", "lari": "twadisa"}, {"fr": "suivre", "lari": "landa"}, {"fr": "porter les habits", "lari": "lwata"}, {"fr": "construire", "lari": "tunga"}, {"fr": "frapper", "lari": "winda"}, {"fr": "cuire les aliments", "lari": "yisa"}, {"fr": "bouger", "lari": "nigana"}, {"fr": "prier", "lari": "sambila"}, {"fr": "écrire", "lari": "sonika"}, {"fr": "travailler", "lari": "sala"}, {"fr": "mélanger", "lari": "bvukisa"}, {"fr": "passer", "lari": "yoka"}, {"fr": "faire passer", "lari": "yokisa"}, {"fr": "démolir", "lari": "mwangasa"}, {"fr": "casser", "lari": "bula"}, {"fr": "glisser", "lari": "tiona"}]}, {"nom": "Conjugaison : présent du verbe zola (aimer)", "entrees": [{"fr": "j'aime", "lari": "nizolele"}, {"fr": "tu aimes", "lari": "kuzolele"}, {"fr": "il/elle aime", "lari": "kazolele"}, {"fr": "nous aimons", "lari": "tuzolele"}, {"fr": "vous aimez", "lari": "luzolele"}, {"fr": "ils/elles aiment", "lari": "bazolele"}]}], "grammaire": {"classes_nominales": [{"classe": "Classe 1 (humain, singulier)", "prefixe": "mu-", "fr": "une personne", "lari": "mûntu"}, {"classe": "Classe 2 (humain, pluriel)", "prefixe": "ba-", "fr": "des personnes", "lari": "bântu"}, {"classe": "Classe 7 (objets, langues, singulier)", "prefixe": "ki-", "fr": "la langue lâri", "lari": "kilâri (ou lâri)"}, {"classe": "Classe 8 (objets, pluriel)", "prefixe": "bi-", "fr": "des choses", "lari": "bîma"}], "regles": [{"titre": "Emprunts au français", "texte": "Un mot français peut être emprunté tel quel en lari, sans article.", "exemples": [{"fr": "le dictionnaire", "lari": "dictionnaire"}, {"fr": "le téléphone", "lari": "téléphone"}]}, {"titre": "Syntaxe : le complément en tête", "texte": "La phrase peut commencer par le complément : complément + pronom personnel + verbe.", "exemples": [{"fr": "il mange du pain", "lari": "di mpa ka ta dia", "detail": "di mpa = du pain · ka ta = il · dia = mange"}, {"fr": "nous chantons une chanson", "lari": "mukunga tu ta tanga", "detail": "mukunga = une chanson · tu ta = nous · tanga = chante"}]}]}};
+const ALL = [];
+DATA.categories.forEach((c, ci) => c.entrees.forEach((e, ei) => ALL.push({ id: ci + "-" + ei, cat: c.nom, fr: e.fr, lari: e.lari })));
+const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+let store = {};
+try { store = JSON.parse(localStorage.getItem("kilari") || "{}"); } catch (e) { store = {}; }
+store.known = store.known || {};
+const save = () => { try { localStorage.setItem("kilari", JSON.stringify(store)); } catch (e) {} };
+
+const S = {
+  tab: "mots", dir: "fr", q: "", cat: "",
+  fcScope: "", fc: null,
+  qzScope: "", qz: null
+};
+document.getElementById("meta").textContent = DATA.meta.entrees + " mots et phrases · " + DATA.meta.categories + " thèmes";
+
+const dirSeg = () => `<div class="seg" role="group" aria-label="Sens">
+  <button data-act="dir" data-v="fr" aria-pressed="${S.dir === "fr"}">Français → Lari</button>
+  <button data-act="dir" data-v="la" aria-pressed="${S.dir === "la"}">Lari → Français</button></div>`;
+const catOptions = (sel, extra) => `<option value="">Tous les thèmes</option>` + (extra || "") +
+  DATA.categories.map(c => `<option value="${esc(c.nom)}" ${sel === c.nom ? "selected" : ""}>${esc(c.nom)} (${c.entrees.length})</option>`).join("");
+const src = e => S.dir === "fr" ? e.fr : e.lari;
+const dst = e => S.dir === "fr" ? e.lari : e.fr;
+const dstCls = () => S.dir === "fr" ? "is-lari" : "";
+const srcCls = () => S.dir === "la" ? "is-lari" : "";
+
+function renderMots() {
+  const q = norm(S.q.trim());
+  const list = ALL.filter(e => (!S.cat || e.cat === S.cat) && (!q || norm(e.fr).includes(q) || norm(e.lari).includes(q)));
+  let html = `<div style="display:flex;flex-direction:column;gap:12px">
+    <input id="q" class="field" type="search" placeholder="Chercher un mot en français ou en lari" value="${esc(S.q)}" autocomplete="off">
+    <div class="row">${dirSeg()}</div>
+    <div class="chips">${[["", "Tout"]].concat(DATA.categories.map(c => [c.nom, c.nom])).map(([v, l]) =>
+      `<button class="chip" data-act="cat" data-v="${esc(v)}" aria-pressed="${S.cat === v}">${esc(l)}</button>`).join("")}</div>
+    <div class="count" id="cnt">${list.length} résultat${list.length > 1 ? "s" : ""}</div><div id="list">`;
+  html += listHTML(list) + "</div></div>";
+  document.getElementById("view").innerHTML = html;
+}
+function listHTML(list) {
+  if (!list.length) return `<div class="empty">Aucun résultat. Essayez un autre mot ou un autre thème.</div>`;
+  let last = null, out = "";
+  list.forEach(e => {
+    if (e.cat !== last) { out += `<div class="group">${esc(e.cat)}</div>`; last = e.cat; }
+    out += `<div class="entry"><div class="a ${srcCls()}">${esc(src(e))}</div><div class="b ${dstCls()}">${esc(dst(e))}</div></div>`;
+  });
+  return out;
+}
+function refreshList() {
+  const q = norm(S.q.trim());
+  const list = ALL.filter(e => (!S.cat || e.cat === S.cat) && (!q || norm(e.fr).includes(q) || norm(e.lari).includes(q)));
+  document.getElementById("list").innerHTML = listHTML(list);
+  document.getElementById("cnt").textContent = list.length + " résultat" + (list.length > 1 ? "s" : "");
+}
+
+/* ---------- Fiches ---------- */
+function poolFor(scope) {
+  if (scope === "__todo") return ALL.filter(e => !store.known[e.id]);
+  return ALL.filter(e => !scope || e.cat === scope);
+}
+function startFc() { S.fc = { deck: shuffle(poolFor(S.fcScope)), i: 0, flip: false, got: 0 }; }
+function renderFiches() {
+  if (!S.fc) startFc();
+  const f = S.fc, known = Object.keys(store.known).length;
+  let html = `<div style="display:flex;flex-direction:column;gap:12px">
+    <select id="fcScope" class="field" aria-label="Thème des fiches">${catOptions(S.fcScope, `<option value="__todo" ${S.fcScope === "__todo" ? "selected" : ""}>Mots pas encore sus</option>`)}</select>
+    <div class="row" style="justify-content:space-between">${dirSeg()}<span class="count">${known} / ${ALL.length} sus</span></div>`;
+  if (!f.deck.length) {
+    html += `<div class="panel"><h2>Rien à réviser ici</h2><p class="sub">Tous les mots de ce choix sont marqués comme sus.</p><button class="btn" data-act="resetKnown">Remettre à zéro la progression</button></div>`;
+  } else if (f.i >= f.deck.length) {
+    html += `<div class="panel"><h2>Série terminée</h2><div class="score">${f.got} / ${f.deck.length}</div><p class="sub">mots sus du premier coup.</p><button class="btn" data-act="fcRestart">Recommencer</button></div>`;
+  } else {
+    const e = f.deck[f.i];
+    html += `<div class="bar" aria-hidden="true"><i style="width:${Math.round(f.i / f.deck.length * 100)}%"></i></div>
+    <button class="card" data-act="flip" aria-label="Retourner la fiche">
+      <span class="tag">${esc(e.cat)}</span>
+      <span class="big ${f.flip ? dstCls() : srcCls()}">${esc(f.flip ? dst(e) : src(e))}</span>
+      <span class="hint">${f.flip ? "" : "Touchez pour voir la réponse"}</span>
+    </button>
+    <div class="count">Fiche ${f.i + 1} sur ${f.deck.length}</div>`;
+    if (f.flip) html += `<div class="btns"><button class="btn alt" data-act="again">À revoir</button><button class="btn" data-act="know">Je sais</button></div>`;
+  }
+  document.getElementById("view").innerHTML = html + "</div>";
+}
+
+/* ---------- Quiz ---------- */
+function startQz() {
+  const pool = shuffle(poolFor(S.qzScope)).slice(0, 10);
+  S.qz = { qs: pool, i: 0, score: 0, picked: null, opts: null };
+}
+function makeOpts(e) {
+  const ans = dst(e);
+  const others = shuffle(ALL.filter(x => dst(x) !== ans && x.id !== e.id)).map(dst);
+  const uniq = [];
+  for (const o of others) { if (!uniq.includes(o)) uniq.push(o); if (uniq.length === 3) break; }
+  return shuffle([ans].concat(uniq));
+}
+function renderQuiz() {
+  if (!S.qz) startQz();
+  const z = S.qz;
+  let html = `<div style="display:flex;flex-direction:column;gap:12px">
+    <select id="qzScope" class="field" aria-label="Thème du quiz">${catOptions(S.qzScope)}</select>
+    <div class="row">${dirSeg()}</div>`;
+  if (z.i >= z.qs.length) {
+    html += `<div class="panel"><h2>Quiz terminé</h2><div class="score">${z.score} / ${z.qs.length}</div>
+      <p class="sub">${z.score === z.qs.length ? "Sans faute." : "Relancez un quiz pour progresser."}</p><button class="btn" data-act="qzRestart">Nouveau quiz</button></div>`;
+  } else {
+    const e = z.qs[z.i];
+    if (!z.opts) z.opts = makeOpts(e);
+    const ans = dst(e);
+    html += `<div class="bar" aria-hidden="true"><i style="width:${Math.round(z.i / z.qs.length * 100)}%"></i></div>
+      <div class="count">Question ${z.i + 1} sur ${z.qs.length} · score ${z.score}</div>
+      <div class="panel"><span class="count">Traduire</span><div class="q ${srcCls()}">${esc(src(e))}</div></div>
+      <div class="opts">${z.opts.map((o, k) => {
+        let cls = "opt";
+        if (z.picked !== null) { if (o === ans) cls += " good"; else if (k === z.picked) cls += " wrong"; }
+        return `<button class="${cls}" data-act="pick" data-k="${k}" ${z.picked !== null ? "disabled" : ""}>${esc(o)}</button>`;
+      }).join("")}</div>`;
+    if (z.picked !== null) html += `<button class="btn" data-act="next">${z.i + 1 >= z.qs.length ? "Voir le score" : "Question suivante"}</button>`;
+  }
+  document.getElementById("view").innerHTML = html + "</div>";
+}
+
+/* ---------- Grammaire ---------- */
+function renderGram() {
+  const g = DATA.grammaire;
+  document.getElementById("view").innerHTML = `<div class="gr">
+    <h2>Les classes nominales</h2>
+    <p class="sub">Le préfixe d'un nom indique sa classe, comme pour les autres langues bantoues.</p>
+    ${g.classes_nominales.map(c => `<div class="panel"><div class="cls"><span class="pre">${esc(c.prefixe)}</span><h3>${esc(c.classe)}</h3></div>
+      <div class="ex">${esc(c.fr)} : <b>${esc(c.lari)}</b></div></div>`).join("")}
+    <h2 style="margin-top:8px">Règles</h2>
+    ${g.regles.map(r => `<div class="panel"><h3>${esc(r.titre)}</h3><p style="margin:0">${esc(r.texte)}</p>
+      ${r.exemples.map(x => `<div class="ex">${esc(x.fr)} : <b>${esc(x.lari)}</b>${x.detail ? `<div class="det">${esc(x.detail)}</div>` : ""}</div>`).join("")}</div>`).join("")}
+  </div>`;
+}
+
+function render() {
+  document.querySelectorAll("nav.tabs button").forEach(b => b.toggleAttribute("aria-current", b.dataset.v === S.tab) || b.removeAttribute("aria-current"));
+  document.querySelectorAll("nav.tabs button").forEach(b => { if (b.dataset.v === S.tab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
+  ({ mots: renderMots, fiches: renderFiches, quiz: renderQuiz, gram: renderGram })[S.tab]();
+}
+
+document.addEventListener("click", ev => {
+  const t = ev.target.closest("[data-act]"); if (!t) return;
+  const a = t.dataset.act, v = t.dataset.v, f = S.fc, z = S.qz;
+  if (a === "tab") { S.tab = v; window.scrollTo(0, 0); }
+  else if (a === "dir") { S.dir = v; if (S.qz) { S.qz.opts = null; S.qz.picked = null; } }
+  else if (a === "cat") { S.cat = v; }
+  else if (a === "flip") { f.flip = !f.flip; }
+  else if (a === "know") { const e = f.deck[f.i]; store.known[e.id] = 1; save(); if (!e.retry) f.got++; f.i++; f.flip = false; }
+  else if (a === "again") { const e = f.deck[f.i]; delete store.known[e.id]; save(); f.deck.push(Object.assign({}, e, { retry: true })); f.i++; f.flip = false; }
+  else if (a === "fcRestart") { startFc(); }
+  else if (a === "resetKnown") { store.known = {}; save(); S.fcScope = ""; startFc(); }
+  else if (a === "pick") { if (z.picked === null) { z.picked = +t.dataset.k; if (z.opts[z.picked] === dst(z.qs[z.i])) z.score++; } }
+  else if (a === "next") { z.i++; z.picked = null; z.opts = null; }
+  else if (a === "qzRestart") { startQz(); }
+  render();
+});
+document.addEventListener("input", ev => {
+  if (ev.target.id === "q") { S.q = ev.target.value; refreshList(); }
+});
+document.addEventListener("change", ev => {
+  if (ev.target.id === "fcScope") { S.fcScope = ev.target.value; startFc(); render(); }
+  if (ev.target.id === "qzScope") { S.qzScope = ev.target.value; startQz(); render(); }
+});
+render();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}
+</script>
+</body>
+</html>
