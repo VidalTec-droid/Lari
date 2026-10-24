@@ -1,0 +1,20 @@
+KILARI - paquet à mettre en ligne
+==================================
+Contenu : index.html, manifest.webmanifest, sw.js, dossier icons/.
+Gardez tous ces fichiers ensemble, à la racine du site.
+
+1) METTRE EN LIGNE (gratuit, sans ligne de commande)
+   Netlify : allez sur app.netlify.com/drop, glissez le DOSSIER décompressé.
+   Vous obtenez un lien public https://....netlify.app.
+   (Alternative : GitHub Pages ou Cloudflare Pages.)
+
+2) INSTALLER SUR TÉLÉPHONE
+   Ouvrez le lien dans Chrome, ouvrez le menu, choisissez
+   "Installer l'application" ou "Ajouter à l'écran d'accueil".
+   Après la première ouverture, elle fonctionne sans connexion.
+
+3) FAIRE UN APK / GOOGLE PLAY
+   Allez sur pwabuilder.com, collez votre lien, cliquez sur
+   "Package for stores" puis "Android". Téléchargez le paquet :
+   il contient l'APK (installation directe) et le fichier AAB (Google Play).
+   Google Play demande un compte développeur (25 $, paiement unique).
