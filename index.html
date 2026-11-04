@@ -418,6 +418,47 @@ function renderProp() {
     <div class="count">Les propositions servent uniquement à améliorer le dictionnaire Kilâri.</div></div>`;
 }
 
+
+/* ---------- Mots validés par la communauté ---------- */
+const COM_NOM = "Mots validés par la communauté";
+const BASE_CATS = DATA.categories.length;
+const BASE_ENTREES = DATA.meta.entrees;
+function rebuildAll() { ALL.length = 0; DATA.categories.forEach((c, ci) => c.entrees.forEach((e, ei) => ALL.push({ id: ci + "-" + ei, cat: c.nom, fr: e.fr, lari: e.lari, ref: e.ref }))); TR.fr = null; TR.la = null; }
+function applyCommunity(list) {
+  DATA.categories.length = BASE_CATS;
+  const have = new Set();
+  DATA.categories.forEach(c => c.entrees.forEach(e => have.add(norm(e.fr) + "|" + norm(e.lari))));
+  const cl = (x, n) => String(x == null ? "" : x).replace(/\s+/g, " ").trim().slice(0, n);
+  const ents = [];
+  (Array.isArray(list) ? list : []).forEach(m => {
+    if (!m) return; const fr = cl(m.fr, 300), la = cl(m.lari, 300), ty = cl(m.type, 20).toLowerCase();
+    if (!fr || !la || ty.indexOf("règle") === 0 || ty.indexOf("regle") === 0) return;
+    const k = norm(fr) + "|" + norm(la); if (have.has(k)) return; have.add(k);
+    const sens = cl(m.sens, 200);
+    ents.push({ fr: fr, lari: la, ref: "Proposé par la communauté" + (sens ? " · " + sens : "") });
+  });
+  if (ents.length) DATA.categories.push({ nom: COM_NOM, entrees: ents });
+  rebuildAll();
+  DATA.meta.entrees = BASE_ENTREES + ents.length; DATA.meta.categories = DATA.categories.length;
+  const mt = document.getElementById("meta");
+  if (mt) mt.textContent = DATA.meta.entrees + " mots et phrases · " + DATA.meta.categories + " thèmes · " + DATA.textes.length + " texte" + (DATA.textes.length > 1 ? "s" : "");
+  return ents.length;
+}
+function applyCommunityCache() {
+  try { const c = JSON.parse(localStorage.getItem("kilari_com") || "null"); if (c && Array.isArray(c)) applyCommunity(c); } catch (e) {}
+}
+async function loadCommunity() {
+  if (navigator.onLine === false) return;
+  try {
+    const r = await fetch(PROP_URL + "?t=" + Date.now()); const j = await r.json();
+    if (!j || !j.ok || !Array.isArray(j.mots)) return;
+    try { localStorage.setItem("kilari_com", JSON.stringify(j.mots)); } catch (e) {}
+    applyCommunity(j.mots);
+    if (S.tab === "mots") refreshList(); else if (S.tab === "fiches" || S.tab === "quiz") { /* mis à jour au prochain changement d'onglet */ }
+  } catch (e) {}
+}
+window.addEventListener("online", loadCommunity);
+
 /* ---------- Phrases : verbes conjugués (français -> lari) ---------- */
 const FR_IRR = {
   prendre: [["prends", "prends", "prend", "prenons", "prenez", "prennent"], "prendr", "pren", "pris"],
@@ -723,7 +764,7 @@ document.addEventListener("change", ev => {
   if (ev.target.id === "cjVerb") { S.verbe = ev.target.value; render(); }
   if (ev.target.id === "qzScope") { S.qzScope = ev.target.value; startQz(); render(); }
 });
-render(); flushQueue();
+applyCommunityCache(); render(); flushQueue(); loadCommunity();
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}
 </script>
 </body>
