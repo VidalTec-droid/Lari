@@ -133,6 +133,7 @@ nav.tabs {
 nav.tabs button { border: 0; background: transparent; padding: 10px 2px; border-radius: 10px; font-weight: 700; font-size: 0.72rem; color: var(--muted); }
 nav.tabs button[aria-current="page"] { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); color: var(--accent); }
 @media (prefers-reduced-motion: no-preference) { .bar > i { transition: width .25s; } }
+.entimg { display:block; max-width:100%; max-height:260px; border-radius:10px; margin-top:8px; object-fit:contain; background:#fff }
 </style>
 
 <meta name="theme-color" content="#1c7a4b">
@@ -187,7 +188,7 @@ try { store = JSON.parse(localStorage.getItem("kilari") || "{}"); } catch (e) { 
 store.known = store.known || {};
 const save = () => { try { localStorage.setItem("kilari", JSON.stringify(store)); } catch (e) {} };
 
-const S = { verbe: "dia",
+const S = { verbe: "dia", media: {},
   tab: "trad", dir: "fr", q: "", cat: "",
   fcScope: "", fc: null,
   qzScope: "", qz: null,
@@ -258,7 +259,7 @@ function listHTML(list, hasHits) {
   let last = null, out = "";
   list.forEach(e => {
     if (e.cat !== last) { out += `<div class="group">${esc(e.cat)}</div>`; last = e.cat; }
-    out += `<div class="entry"><div class="a ${srcCls()}">${esc(src(e))}</div><div class="b ${dstCls()}">${esc(dst(e))}</div>${e.ref ? `<div class="count">${esc(e.ref)}</div>` : ""}</div>`;
+    out += `<div class="entry"><div class="a ${srcCls()}">${esc(src(e))}</div><div class="b ${dstCls()}">${esc(dst(e))}</div>${e.ref ? `<div class="count">${esc(e.ref)}</div>` : ""}${mediaHTML(e)}</div>`;
   });
   return out;
 }
@@ -377,7 +378,7 @@ function buildIdx(d) {
 
 /* ---------- Propositions de mots ---------- */
 const PROP_URL = "https://script.google.com/macros/s/AKfycbwIxJd23jDgiAWtrGdIrs0Qb3thb5km0bCdvo0064JmaLfW6COgNAk7bwMwra7ESwYqig/exec";
-S.prop = { type: "mot", fr: "", lari: "", sens: "", nom: "", msg: "" }; S.prev = "trad";
+S.prop = { type: "mot", fr: "", lari: "", sens: "", nom: "", msg: "", img: "", pron: "", audio: "", rec: false }; S.prev = "trad";
 let QMEM = [];
 function qLoad() { try { return JSON.parse(localStorage.getItem("kilari_q") || "[]"); } catch (e) { return QMEM.slice(); } }
 function qSave(a) { QMEM = a.slice(); try { localStorage.setItem("kilari_q", JSON.stringify(a)); } catch (e) {} }
@@ -392,12 +393,56 @@ async function flushQueue() {
   qSave(qLoad().slice(q.length).concat(rest)); FLUSHING = false; if (S.tab === "prop") render();
 }
 window.addEventListener("online", flushQueue);
+let REC = null;
+function stopRec() { if (REC && REC.mr && REC.mr.state !== "inactive") REC.mr.stop(); }
+async function startRec() {
+  const p = S.prop; p.audErr = "";
+  if (!navigator.mediaDevices || !window.MediaRecorder) { p.audErr = "L'enregistrement n'est pas disponible sur cet appareil. Écrivez la prononciation à la place."; render(); return; }
+  try {
+    const st = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
+    const mt = types.find(x => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(x)) || "";
+    const mr = mt ? new MediaRecorder(st, { mimeType: mt }) : new MediaRecorder(st);
+    const chunks = []; REC = { mr: mr, timer: setTimeout(stopRec, 8000) };
+    mr.ondataavailable = ev => { if (ev.data && ev.data.size) chunks.push(ev.data); };
+    mr.onstop = () => {
+      clearTimeout(REC.timer); st.getTracks().forEach(x => x.stop());
+      const blob = new Blob(chunks, { type: mr.mimeType || mt || "audio/webm" });
+      if (blob.size > 300000) { p.audErr = "Enregistrement trop long. Réessayez avec le mot seul."; p.rec = false; render(); return; }
+      const fr = new FileReader();
+      fr.onload = () => { p.audio = fr.result; p.rec = false; render(); };
+      fr.readAsDataURL(blob);
+    };
+    mr.start(); p.rec = true; render();
+  } catch (e) { p.audErr = "Le micro n'est pas autorisé. Autorisez-le dans les réglages du navigateur, ou écrivez la prononciation."; p.rec = false; render(); }
+}
+function shrinkImage(file) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onerror = () => rej(new Error("lecture"));
+    fr.onload = () => {
+      const im = new Image();
+      im.onerror = () => rej(new Error("image"));
+      im.onload = () => {
+        const M = 800, k = Math.min(1, M / Math.max(im.width, im.height));
+        const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(im.width * k)); c.height = Math.max(1, Math.round(im.height * k));
+        const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(im, 0, 0, c.width, c.height);
+        res(c.toDataURL("image/jpeg", 0.72));
+      };
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
 function sendProp() {
   const p = S.prop, cl = x => String(x || "").trim().slice(0, 500);
   if (!cl(p.fr) || !cl(p.lari)) { p.msg = "Remplissez au moins le français et le lari."; p.ok = false; return; }
   const it = { type: cl(p.type), fr: cl(p.fr), lari: cl(p.lari), sens: cl(p.sens), nom: cl(p.nom) };
+  if (p.img && p.img.length < 450000) it.img = p.img;
+  if (p.audio && p.audio.length < 450000) it.audio = p.audio;
+  if (cl(p.pron)) it.pron = cl(p.pron);
   const q = qLoad(); q.push(it); qSave(q);
-  p.fr = ""; p.lari = ""; p.sens = ""; p.ok = true;
+  p.fr = ""; p.lari = ""; p.sens = ""; p.img = ""; p.audio = ""; p.pron = ""; p.ok = true;
   p.msg = navigator.onLine === false ? "Enregistré sur votre téléphone. Il sera envoyé à votre prochaine connexion. Merci !" : "Merci ! Votre proposition est envoyée. Elle sera vérifiée avant d'être ajoutée.";
   flushQueue();
 }
@@ -411,6 +456,15 @@ function renderProp() {
     <input id="pp_fr" class="field" placeholder="En français" value="${esc(p.fr)}" maxlength="500" autocomplete="off">
     <input id="pp_lari" class="field" placeholder="En lari" value="${esc(p.lari)}" maxlength="500" autocomplete="off">
     <textarea id="pp_sens" class="field" rows="3" placeholder="Signification ou exemple d'emploi (facultatif)" maxlength="500">${esc(p.sens)}</textarea>
+    <div class="panel" style="gap:8px"><label for="pp_img" class="count" style="font-weight:700">Photo ou dessin pour illustrer (facultatif)</label>
+      <input id="pp_img" type="file" accept="image/*">
+      ${p.img ? `<img src="${p.img}" alt="Aperçu de l'image" style="max-width:100%;max-height:220px;border-radius:10px;object-fit:contain"><button class="btn alt" data-act="pimgx">Retirer l'image</button>` : ""}
+      ${p.imgErr ? `<div class="note">${esc(p.imgErr)}</div>` : ""}</div>
+    <div class="panel" style="gap:8px"><span class="count" style="font-weight:700">Prononciation (facultatif)</span>
+      <input id="pp_pron" class="field" placeholder="Comment se prononce-t-il ? (écrit)" value="${esc(p.pron)}" maxlength="100" autocomplete="off">
+      ${p.audio ? `<audio controls src="${esc(p.audio)}" style="width:100%"></audio><button class="btn alt" data-act="audx">Supprimer l'enregistrement</button>`
+        : `<button class="btn alt" data-act="rec">${p.rec ? "⏹ Arrêter l'enregistrement" : "🎤 Enregistrer la prononciation"}</button>${p.rec ? `<div class="count">Enregistrement en cours… dites le mot (8 secondes au maximum).</div>` : ""}`}
+      ${p.audErr ? `<div class="note">${esc(p.audErr)}</div>` : ""}</div>
     <input id="pp_nom" class="field" placeholder="Votre nom (facultatif)" value="${esc(p.nom)}" maxlength="100" autocomplete="off">
     <button class="btn" data-act="psend">Envoyer la proposition</button>
     ${p.msg ? `<div class="note" role="status">${esc(p.msg)}</div>` : ""}
@@ -419,23 +473,53 @@ function renderProp() {
 }
 
 
+/* ---------- Médias (images, sons) des mots validés ---------- */
+async function loadMedia(id) {
+  const m = S.media[id]; if (m && (m.url || m.loading)) return;
+  S.media[id] = { loading: true }; refreshList();
+  try {
+    if (navigator.onLine === false) throw new Error("hors ligne");
+    const r = await fetch(PROP_URL + "?media=" + encodeURIComponent(id)); const j = await r.json();
+    if (!j || !j.ok || !j.data) throw new Error("introuvable");
+    S.media[id] = { url: "data:" + j.mime + ";base64," + j.data };
+  } catch (e) { S.media[id] = { err: true }; }
+  refreshList();
+}
+function mediaHTML(e) {
+  let h = "";
+  const one = (id, kind) => {
+    const m = S.media[id];
+    if (m && m.url) return kind === "img" ? `<img class="entimg" src="${esc(m.url)}" alt="${esc(e.fr)}">` : `<audio controls ${m.play ? "autoplay" : ""} src="${esc(m.url)}" style="width:100%;margin-top:6px"></audio>`;
+    if (m && m.loading) return `<span class="count">Chargement…</span>`;
+    return `<button class="tog" data-act="media" data-id="${esc(id)}" data-kind="${kind}">${kind === "img" ? "🖼 Voir l'image" : "🔊 Écouter"}</button>${m && m.err ? `<span class="count"> Indisponible (connexion requise)</span>` : ""}`;
+  };
+  if (e.pron) h += `<div class="count">Prononciation : <b>${esc(e.pron)}</b></div>`;
+  if (e.audio) h += one(e.audio, "audio");
+  if (e.img) h += one(e.img, "img");
+  return h;
+}
 /* ---------- Mots validés par la communauté ---------- */
 const COM_NOM = "Mots validés par la communauté";
 const BASE_CATS = DATA.categories.length;
 const BASE_ENTREES = DATA.meta.entrees;
-function rebuildAll() { ALL.length = 0; DATA.categories.forEach((c, ci) => c.entrees.forEach((e, ei) => ALL.push({ id: ci + "-" + ei, cat: c.nom, fr: e.fr, lari: e.lari, ref: e.ref }))); TR.fr = null; TR.la = null; }
+function rebuildAll() { ALL.length = 0; DATA.categories.forEach((c, ci) => c.entrees.forEach((e, ei) => ALL.push({ id: ci + "-" + ei, cat: c.nom, fr: e.fr, lari: e.lari, ref: e.ref, pron: e.pron, img: e.img, audio: e.audio }))); TR.fr = null; TR.la = null; }
 function applyCommunity(list) {
   DATA.categories.length = BASE_CATS;
-  const have = new Set();
-  DATA.categories.forEach(c => c.entrees.forEach(e => have.add(norm(e.fr) + "|" + norm(e.lari))));
+  const have = new Map();
+  DATA.categories.forEach(c => c.entrees.forEach(e => { delete e.pron; delete e.img; delete e.audio; have.set(norm(e.fr) + "|" + norm(e.lari), e); }));
   const cl = (x, n) => String(x == null ? "" : x).replace(/\s+/g, " ").trim().slice(0, n);
   const ents = [];
   (Array.isArray(list) ? list : []).forEach(m => {
     if (!m) return; const fr = cl(m.fr, 300), la = cl(m.lari, 300), ty = cl(m.type, 20).toLowerCase();
     if (!fr || !la || ty.indexOf("règle") === 0 || ty.indexOf("regle") === 0) return;
-    const k = norm(fr) + "|" + norm(la); if (have.has(k)) return; have.add(k);
+    const k = norm(fr) + "|" + norm(la), id = x => /^[\w-]{20,60}$/.test(String(x || "")) ? String(x) : undefined;
+    const pr = cl(m.pron, 100) || undefined, im = id(m.img), au = id(m.audio);
+    const ex = have.get(k);
+    if (ex) { if (pr) ex.pron = pr; if (im) ex.img = im; if (au) ex.audio = au; return; }
     const sens = cl(m.sens, 200);
-    ents.push({ fr: fr, lari: la, ref: "Proposé par la communauté" + (sens ? " · " + sens : "") });
+    const en = { fr: fr, lari: la, ref: "Proposé par la communauté" + (sens ? " · " + sens : "") };
+    if (pr) en.pron = pr; if (im) en.img = im; if (au) en.audio = au;
+    have.set(k, en); ents.push(en);
   });
   if (ents.length) DATA.categories.push({ nom: COM_NOM, entrees: ents });
   rebuildAll();
@@ -731,10 +815,14 @@ document.addEventListener("click", ev => {
   const t = ev.target.closest("[data-act]"); if (!t) return;
   const a = t.dataset.act, v = t.dataset.v, f = S.fc, z = S.qz;
   if (a === "trcopy" || a === "misscopy") { copyText(a === "trcopy" ? S.lastTr : S.lastMiss.join("\n"), t); return; }
+  if (a === "media") { const mm = S.media[t.dataset.id]; if (t.dataset.kind === "audio") S.media[t.dataset.id] = Object.assign({}, mm, { play: true }); loadMedia(t.dataset.id); return; }
   if (a === "tab") { S.tab = v; window.scrollTo(0, 0); }
   else if (a === "prop") { S.prev = S.tab === "prop" ? S.prev : S.tab; S.prop.msg = ""; const w = t.dataset.from === "q" ? S.q : t.dataset.from === "miss" ? S.lastMiss.join(", ") : ""; if (w) { if (S.dir === "fr") S.prop.fr = w; else S.prop.lari = w; } S.tab = "prop"; window.scrollTo(0, 0); }
   else if (a === "pback") { S.tab = S.prev || "trad"; window.scrollTo(0, 0); }
   else if (a === "psend") { sendProp(); }
+  else if (a === "rec") { if (S.prop.rec) stopRec(); else { startRec(); return; } }
+  else if (a === "audx") { S.prop.audio = ""; S.prop.audErr = ""; }
+  else if (a === "pimgx") { S.prop.img = ""; S.prop.imgErr = ""; }
   else if (a === "hits") { S.hitsOpen = !S.hitsOpen; }
   else if (a === "tgo") { S.tab = "textes"; S.tx.open = +t.dataset.ti; S.tx.shown = {}; S.tx.shown[t.dataset.n] = true; S.tx.focus = t.dataset.n; }
   else if (a === "topen") { S.tx.open = +v; S.tx.shown = {}; window.scrollTo(0, 0); }
@@ -756,11 +844,17 @@ document.addEventListener("click", ev => {
 });
 document.addEventListener("input", ev => {
   if (ev.target.id === "q") { S.q = ev.target.value; S.hitsOpen = false; refreshList(); }
-  if (ev.target.id && ev.target.id.startsWith("pp_")) { S.prop[ev.target.id.slice(3)] = ev.target.value; }
+  if (ev.target.id && ev.target.id.startsWith("pp_") && ev.target.id !== "pp_img") { S.prop[ev.target.id.slice(3)] = ev.target.value; }
   if (ev.target.id === "trIn") { S.trText = ev.target.value; updateTr(); }
 });
 document.addEventListener("change", ev => {
   if (ev.target.id === "fcScope") { S.fcScope = ev.target.value; startFc(); render(); }
+  if (ev.target.id === "pp_img") {
+    const f = ev.target.files && ev.target.files[0]; if (!f) return;
+    S.prop.imgErr = "";
+    shrinkImage(f).then(d => { S.prop.img = d; render(); }).catch(() => { S.prop.img = ""; S.prop.imgErr = "Cette image n'a pas pu être lue. Essayez une autre photo."; render(); });
+    return;
+  }
   if (ev.target.id === "cjVerb") { S.verbe = ev.target.value; render(); }
   if (ev.target.id === "qzScope") { S.qzScope = ev.target.value; startQz(); render(); }
 });
