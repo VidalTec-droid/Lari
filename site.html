@@ -8,7 +8,7 @@
 <meta property="og:title" content="Kilâri – Apprendre le lari">
 <meta property="og:description" content="Dictionnaire, traducteur français-lari-anglais, conjugaison, quiz et vidéos. Gratuit.">
 <meta property="og:image" content="https://vidaltec-droid.github.io/Lari/icon-512.png">
-<link rel="icon" href="../icon-192.png">
+<link rel="icon" href="icon-192.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <style>
 :root{--bg:#f1f4ef;--surface:#fff;--fg:#12251d;--muted:#52665b;--line:#d6ddd5;--accent:#1c7a4b;--ink:#fff;--sun:#f0b323}
@@ -54,14 +54,14 @@ footer{border-top:1px solid var(--line);padding:28px 0 48px;color:var(--muted);f
 </head>
 <body>
 <div class="wrap">
-<header><b>Kilâri</b><nav><a href="#fonctions">Fonctions</a><a href="#videos">Vidéos</a><a href="#installer">Installer</a></nav></header>
+<header><b>Kilâri</b><nav><a href="#fonctions">Fonctions</a><a href="#videos">Vidéos</a><a href="#liens">Liens</a><a href="#installer">Installer</a></nav></header>
 <div class="hero">
   <div>
     <h1>Apprenez le <span>lari</span>, simplement.</h1>
     <p class="lead">Le dictionnaire, le traducteur et les leçons de la langue lari du Congo-Brazzaville, avec le français et l'anglais. Gratuit, sans publicité.</p>
-    <div class="row"><a class="btn" href="../index.html">Ouvrir l'application</a><a class="btn alt" href="#installer">Installer sur mon téléphone</a></div>
+    <div class="row"><a class="btn" href="index.html">Ouvrir l'application</a><a class="btn alt" href="#installer">Installer sur mon téléphone</a></div>
   </div>
-  <div class="phones"><img src="img/traduire.jpg" alt="Le traducteur de Kilâri" width="390" height="760"><img src="img/mots.jpg" alt="Le dictionnaire de Kilâri" width="390" height="760"></div>
+  <div class="phones"><img src="site-traduire.jpg" alt="Le traducteur de Kilâri" width="390" height="760"><img src="site-mots.jpg" alt="Le dictionnaire de Kilâri" width="390" height="760"></div>
 </div>
 </div>
 
@@ -74,10 +74,12 @@ footer{border-top:1px solid var(--line);padding:28px 0 48px;color:var(--muted);f
 <div class="card"><h3>Anglais</h3><p>Verbes irréguliers avec prononciation américaine et britannique, synonymes et antonymes.</p></div>
 <div class="card"><h3>Pour tous, avec tous</h3><p>Proposez un mot avec une image ou votre voix : après validation, il rejoint le dictionnaire.</p></div>
 </div>
-<div class="shots" style="margin-top:28px"><img src="img/anglais.jpg" alt="Onglet Anglais" loading="lazy"><img src="img/infos.jpg" alt="Onglet Infos et vidéos" loading="lazy"></div>
+<div class="shots" style="margin-top:28px"><img src="site-anglais.jpg" alt="Onglet Anglais" loading="lazy"><img src="site-infos.jpg" alt="Onglet Infos et vidéos" loading="lazy"></div>
 </div></section>
 
 <section id="videos"><div class="wrap"><h2>Vidéos</h2><p class="sub" id="chaine">Apprenez en regardant et en écoutant.</p><div class="vgrid" id="vids"></div></div></section>
+
+<section id="liens"><div class="wrap"><h2>Liens et applications</h2><p class="sub">Ressources complémentaires. Les applications listées ici appartiennent à d'autres éditeurs et se téléchargent sur les magasins officiels.</p><div class="grid" id="liensl"></div></div></section>
 
 <section id="actus"><div class="wrap"><h2>Actualités</h2><p class="sub">Les nouveautés de l'application.</p><div class="news" id="news"></div></div></section>
 
@@ -87,20 +89,23 @@ footer{border-top:1px solid var(--line);padding:28px 0 48px;color:var(--muted);f
 <li><b>iPhone (Safari)</b> : touchez le bouton Partager puis « Sur l'écran d'accueil ».</li>
 <li>L'icône Kilâri apparaît sur votre écran. Après la première ouverture, elle marche sans connexion.</li>
 </ol>
-<div class="row"><a class="btn" href="../index.html">Ouvrir l'application</a></div></div></section>
+<div class="row"><a class="btn" href="index.html">Ouvrir l'application</a></div></div></section>
 
 <footer><div class="wrap">
 <p>Kilâri est un projet éducatif gratuit et non commercial. Les données de départ s'appuient sur des travaux universitaires sur le lari ; les mots validés par la communauté sont ajoutés au fil du temps.</p>
-<p><a href="../confidentialite.html">Politique de confidentialité</a> · Contact : <a href="mailto:vidalmiena46@gmail.com">vidalmiena46@gmail.com</a></p>
+<p><a href="confidentialite.html">Politique de confidentialité</a> · Contact : <a href="mailto:vidalmiena46@gmail.com">vidalmiena46@gmail.com</a></p>
 </div></footer>
 
 <script>
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ytId=u=>{const m=String(u||"").match(/(?:youtu\.be\/|v=|embed\/|shorts\/|live\/)([\w-]{11})/);return m?m[1]:/^[\w-]{11}$/.test(u||"")?u:""};
-fetch("../contenu.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(c=>{
+fetch("contenu.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(c=>{
   const v=(c.videos||[]).filter(x=>ytId(x.url));
   if(c.chaine&&c.chaine.url)document.getElementById("chaine").innerHTML='Apprenez en regardant et en écoutant. <a href="'+esc(c.chaine.url)+'" target="_blank" rel="noopener">Notre chaîne YouTube'+(c.chaine.nom?" : "+esc(c.chaine.nom):"")+'</a>';
   document.getElementById("vids").innerHTML=v.length?v.map(x=>{const id=ytId(x.url);return '<div class="card"><button class="vid" data-id="'+id+'" aria-label="Lire la vidéo"><img src="https://i.ytimg.com/vi/'+id+'/hqdefault.jpg" alt="" loading="lazy"><span>▶</span></button><h3 style="margin-top:12px">'+esc(x.titre||"Vidéo")+'</h3>'+(x.desc?'<p>'+esc(x.desc)+'</p>':'')+'</div>'}).join(""):'<div class="empty">Les premières vidéos arrivent bientôt.</div>';
+  const L=(c.liens||[]).map(l=>'<div class="card"><h3>'+esc(l.titre)+'</h3><p>'+esc(l.desc||"")+'</p><div class="row"><a class="btn alt" href="'+esc(l.url)+'" target="_blank" rel="noopener">Visiter le site</a></div></div>').concat((c.apps||[]).map(a=>'<div class="card"><h3>'+esc(a.titre)+'</h3><p>'+esc(a.desc||"")+'</p><div class="row">'+(a.android?'<a class="btn" href="'+esc(a.android)+'" target="_blank" rel="noopener">Télécharger (Android)</a>':'')+(a.ios?'<a class="btn alt" href="'+esc(a.ios)+'" target="_blank" rel="noopener">Télécharger (iPhone)</a>':'')+'</div></div>'));
+  document.getElementById("liensl").innerHTML=L.join("")||'<div class="empty">Bientôt.</div>';
+  if(!L.length)document.getElementById("liens").style.display="none";
   const n=c.actualites||[];
   document.getElementById("news").innerHTML=n.length?n.map(x=>'<div class="card"><time>'+esc(x.date||"")+'</time><h3>'+esc(x.titre||"")+'</h3><p>'+esc(x.texte||"")+'</p>'+(x.lien?'<p><a href="'+esc(x.lien)+'" target="_blank" rel="noopener">En savoir plus</a></p>':'')+'</div>').join(""):'<div class="empty">Pas encore d\'actualité.</div>';
 }).catch(()=>{document.getElementById("vids").innerHTML='<div class="empty">Contenu indisponible pour le moment.</div>';});

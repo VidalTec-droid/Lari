@@ -1,5 +1,8 @@
 {
-  "chaine": { "nom": "", "url": "" },
+  "chaine": {
+    "nom": "",
+    "url": ""
+  },
   "actualites": [
     {
       "date": "2026-11-08",
@@ -12,5 +15,20 @@
       "texte": "Vous connaissez un mot ou une expression que l'application n'a pas encore ? Utilisez « Proposer un mot », avec une image ou votre voix. Après validation, il rejoint le dictionnaire pour tous."
     }
   ],
-  "videos": []
+  "videos": [],
+  "liens": [
+    {
+      "titre": "Site du Prophète Kacou Philippe",
+      "desc": "Prédications, cantiques, vidéos et informations.",
+      "url": "https://www.philippekacou.org"
+    }
+  ],
+  "apps": [
+    {
+      "titre": "Application Prophète Kacou Philippe",
+      "desc": "Le message en texte et en audio, en plusieurs langues.",
+      "android": "https://play.google.com/store/apps/details?id=com.matth25.prophetekacou",
+      "ios": "https://apps.apple.com/app/id1348915504"
+    }
+  ]
 }

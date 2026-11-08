@@ -907,6 +907,9 @@ function renderInfos() {
         <h3>${esc(v.titre || "Vidéo")}</h3>${v.desc ? `<p class="sub" style="margin:0">${esc(v.desc)}</p>` : ""}
         <div class="row"><a class="btn alt" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener">Ouvrir sur YouTube</a></div></div>`; }).join("") :
       `<div class="note">${CLOADED || CONTENU ? "Aucune vidéo pour le moment." : "Chargement…"} ${navigator.onLine === false ? "Connectez-vous à internet pour voir les vidéos." : ""}</div>`}
+    ${(c.liens || []).length || (c.apps || []).length ? `<h3>Liens et applications</h3>` : ""}
+    ${(c.liens || []).map(l => `<div class="panel"><h3>${esc(l.titre || "")}</h3>${l.desc ? `<p class="sub" style="margin:0">${esc(l.desc)}</p>` : ""}<div class="row"><a class="btn alt" href="${esc(l.url)}" target="_blank" rel="noopener">Visiter le site</a></div></div>`).join("")}
+    ${(c.apps || []).map(a => `<div class="panel"><h3>${esc(a.titre || "")}</h3>${a.desc ? `<p class="sub" style="margin:0">${esc(a.desc)}</p>` : ""}<div class="row">${a.android ? `<a class="btn" href="${esc(a.android)}" target="_blank" rel="noopener">Télécharger (Android)</a>` : ""}${a.ios ? `<a class="btn alt" href="${esc(a.ios)}" target="_blank" rel="noopener">Télécharger (iPhone)</a>` : ""}</div><div class="count">Application d'un autre éditeur : le téléchargement se fait sur le magasin officiel (Google Play ou App Store).</div></div>`).join("")}
     <h3>Actualités</h3>
     ${news.length ? news.map(n => `<div class="panel"><div class="count">${esc(n.date || "")}</div><h3>${esc(n.titre || "")}</h3><p class="sub" style="margin:0;white-space:pre-line">${esc(n.texte || "")}</p>${n.lien ? `<div class="row"><a class="btn alt" href="${esc(n.lien)}" target="_blank" rel="noopener">En savoir plus</a></div>` : ""}</div>`).join("") : `<div class="note">Pas encore d'actualité.</div>`}</div>`;
   if (!CLOADED) loadContenu();
