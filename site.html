@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kilâri – Apprendre le lari</title>
+<meta name="description" content="Kilâri : l'application gratuite pour apprendre le lari (Congo-Brazzaville) avec le français et l'anglais. Dictionnaire, traducteur, conjugaison, quiz, vidéos.">
+<meta property="og:title" content="Kilâri – Apprendre le lari">
+<meta property="og:description" content="Dictionnaire, traducteur français-lari-anglais, conjugaison, quiz et vidéos. Gratuit.">
+<meta property="og:image" content="https://vidaltec-droid.github.io/Lari/icon-512.png">
+<link rel="icon" href="../icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+:root{--bg:#f1f4ef;--surface:#fff;--fg:#12251d;--muted:#52665b;--line:#d6ddd5;--accent:#1c7a4b;--ink:#fff;--sun:#f0b323}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1a14;--surface:#16241c;--fg:#e8f0ea;--muted:#9db2a5;--line:#28392f;--accent:#46b97d;--ink:#06140c}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:1.05rem/1.6 "Atkinson Hyperlegible",system-ui,sans-serif}
+h1,h2,h3{font-family:"Bricolage Grotesque",system-ui,sans-serif;line-height:1.15;margin:0}
+a{color:var(--accent)}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+header{display:flex;justify-content:space-between;align-items:center;padding:16px 0;gap:12px}
+header b{font:800 1.4rem "Bricolage Grotesque",sans-serif}
+nav a{margin-left:16px;text-decoration:none;color:var(--muted);font-weight:700;font-size:.95rem}
+.hero{display:grid;gap:32px;padding:32px 0 56px;align-items:center}
+@media(min-width:820px){.hero{grid-template-columns:1.1fr .9fr}}
+.hero h1{font-size:clamp(2.2rem,6vw,3.6rem);font-weight:800}
+.hero h1 span{color:var(--accent)}
+.lead{color:var(--muted);font-size:1.2rem;max-width:34ch}
+.btn{display:inline-block;background:var(--accent);color:var(--ink);padding:14px 22px;border-radius:12px;font-weight:700;text-decoration:none;border:2px solid var(--accent)}
+.btn.alt{background:transparent;color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}
+.phones{display:flex;gap:14px;justify-content:center}
+.phones img{width:46%;max-width:230px;border-radius:22px;border:6px solid var(--fg);box-shadow:0 18px 40px #0003;background:#fff}
+.phones img:nth-child(2){margin-top:34px}
+section{padding:44px 0;border-top:1px solid var(--line)}
+section>.wrap>h2{font-size:clamp(1.6rem,4vw,2.2rem);margin-bottom:8px}
+.sub{color:var(--muted);margin:0 0 24px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+.card h3{font-size:1.15rem;margin-bottom:6px}.card p{margin:0;color:var(--muted)}
+.shots{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory}
+.shots img{height:440px;border-radius:18px;border:5px solid var(--fg);scroll-snap-align:start}
+.vgrid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+.vid{position:relative;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden;cursor:pointer;border:0;width:100%;padding:0}
+.vid img{width:100%;height:100%;object-fit:cover}
+.vid span{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:3rem;text-shadow:0 2px 10px #000}
+.news{display:grid;gap:12px}.news time{color:var(--muted);font-size:.9rem}
+.steps{counter-reset:s;display:grid;gap:12px;padding:0;list-style:none;margin:0}
+.steps li{counter-increment:s;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 14px 14px 54px;position:relative}
+.steps li::before{content:counter(s);position:absolute;left:14px;top:12px;width:28px;height:28px;border-radius:50%;background:var(--sun);color:#12251d;font-weight:800;display:grid;place-items:center}
+footer{border-top:1px solid var(--line);padding:28px 0 48px;color:var(--muted);font-size:.92rem}
+.empty{color:var(--muted);border:1px dashed var(--line);border-radius:12px;padding:16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><b>Kilâri</b><nav><a href="#fonctions">Fonctions</a><a href="#videos">Vidéos</a><a href="#installer">Installer</a></nav></header>
+<div class="hero">
+  <div>
+    <h1>Apprenez le <span>lari</span>, simplement.</h1>
+    <p class="lead">Le dictionnaire, le traducteur et les leçons de la langue lari du Congo-Brazzaville, avec le français et l'anglais. Gratuit, sans publicité.</p>
+    <div class="row"><a class="btn" href="../index.html">Ouvrir l'application</a><a class="btn alt" href="#installer">Installer sur mon téléphone</a></div>
+  </div>
+  <div class="phones"><img src="img/traduire.jpg" alt="Le traducteur de Kilâri" width="390" height="760"><img src="img/mots.jpg" alt="Le dictionnaire de Kilâri" width="390" height="760"></div>
+</div>
+</div>
+
+<section id="fonctions"><div class="wrap"><h2>Tout pour apprendre</h2><p class="sub">Une application complète qui fonctionne aussi sans connexion.</p>
+<div class="grid">
+<div class="card"><h3>Dictionnaire</h3><p>Plus de 600 mots et phrases par thèmes. Touchez un mot pour l'écouter.</p></div>
+<div class="card"><h3>Traducteur</h3><p>Français, lari et anglais, avec les règles de conjugaison et une traduction en ligne pour les phrases.</p></div>
+<div class="card"><h3>Conjugaison</h3><p>Les verbes lari aux temps simples et au passé composé.</p></div>
+<div class="card"><h3>Fiches et quiz</h3><p>Révisez le vocabulaire et testez-vous.</p></div>
+<div class="card"><h3>Anglais</h3><p>Verbes irréguliers avec prononciation américaine et britannique, synonymes et antonymes.</p></div>
+<div class="card"><h3>Pour tous, avec tous</h3><p>Proposez un mot avec une image ou votre voix : après validation, il rejoint le dictionnaire.</p></div>
+</div>
+<div class="shots" style="margin-top:28px"><img src="img/anglais.jpg" alt="Onglet Anglais" loading="lazy"><img src="img/infos.jpg" alt="Onglet Infos et vidéos" loading="lazy"></div>
+</div></section>
+
+<section id="videos"><div class="wrap"><h2>Vidéos</h2><p class="sub" id="chaine">Apprenez en regardant et en écoutant.</p><div class="vgrid" id="vids"></div></div></section>
+
+<section id="actus"><div class="wrap"><h2>Actualités</h2><p class="sub">Les nouveautés de l'application.</p><div class="news" id="news"></div></div></section>
+
+<section id="installer"><div class="wrap"><h2>Installer Kilâri</h2><p class="sub">Pas de fichier à télécharger : l'application s'installe depuis le navigateur.</p>
+<ol class="steps">
+<li><b>Android (Chrome)</b> : ouvrez l'application, touchez le menu ⋮ puis « Installer l'application ».</li>
+<li><b>iPhone (Safari)</b> : touchez le bouton Partager puis « Sur l'écran d'accueil ».</li>
+<li>L'icône Kilâri apparaît sur votre écran. Après la première ouverture, elle marche sans connexion.</li>
+</ol>
+<div class="row"><a class="btn" href="../index.html">Ouvrir l'application</a></div></div></section>
+
+<footer><div class="wrap">
+<p>Kilâri est un projet éducatif gratuit et non commercial. Les données de départ s'appuient sur des travaux universitaires sur le lari ; les mots validés par la communauté sont ajoutés au fil du temps.</p>
+<p><a href="../confidentialite.html">Politique de confidentialité</a> · Contact : <a href="mailto:vidalmiena46@gmail.com">vidalmiena46@gmail.com</a></p>
+</div></footer>
+
+<script>
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ytId=u=>{const m=String(u||"").match(/(?:youtu\.be\/|v=|embed\/|shorts\/|live\/)([\w-]{11})/);return m?m[1]:/^[\w-]{11}$/.test(u||"")?u:""};
+fetch("../contenu.json?t="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(c=>{
+  const v=(c.videos||[]).filter(x=>ytId(x.url));
+  if(c.chaine&&c.chaine.url)document.getElementById("chaine").innerHTML='Apprenez en regardant et en écoutant. <a href="'+esc(c.chaine.url)+'" target="_blank" rel="noopener">Notre chaîne YouTube'+(c.chaine.nom?" : "+esc(c.chaine.nom):"")+'</a>';
+  document.getElementById("vids").innerHTML=v.length?v.map(x=>{const id=ytId(x.url);return '<div class="card"><button class="vid" data-id="'+id+'" aria-label="Lire la vidéo"><img src="https://i.ytimg.com/vi/'+id+'/hqdefault.jpg" alt="" loading="lazy"><span>▶</span></button><h3 style="margin-top:12px">'+esc(x.titre||"Vidéo")+'</h3>'+(x.desc?'<p>'+esc(x.desc)+'</p>':'')+'</div>'}).join(""):'<div class="empty">Les premières vidéos arrivent bientôt.</div>';
+  const n=c.actualites||[];
+  document.getElementById("news").innerHTML=n.length?n.map(x=>'<div class="card"><time>'+esc(x.date||"")+'</time><h3>'+esc(x.titre||"")+'</h3><p>'+esc(x.texte||"")+'</p>'+(x.lien?'<p><a href="'+esc(x.lien)+'" target="_blank" rel="noopener">En savoir plus</a></p>':'')+'</div>').join(""):'<div class="empty">Pas encore d\'actualité.</div>';
+}).catch(()=>{document.getElementById("vids").innerHTML='<div class="empty">Contenu indisponible pour le moment.</div>';});
+document.addEventListener("click",e=>{const b=e.target.closest(".vid");if(!b)return;
+  b.outerHTML='<div class="vid"><iframe src="https://www.youtube-nocookie.com/embed/'+b.dataset.id+'?autoplay=1&rel=0" title="Vidéo" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe></div>';});
+</script>
+</body>
+</html>

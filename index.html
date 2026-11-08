@@ -127,13 +127,14 @@ textarea.field { resize: vertical; font-family: var(--font-body); line-height: 1
 .det { color: var(--muted); font-size: 0.85rem; }
 nav.tabs {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--surface); border-top: 1px solid var(--line);
-  display: grid; grid-template-columns: repeat(6, 1fr);
+  display: grid; grid-template-columns: repeat(8, 1fr);
   padding: 6px max(8px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
 }
-nav.tabs button { border: 0; background: transparent; padding: 10px 2px; border-radius: 10px; font-weight: 700; font-size: 0.72rem; color: var(--muted); }
+nav.tabs button { border: 0; background: transparent; padding: 10px 0; border-radius: 10px; font-weight: 700; font-size: 0.63rem; letter-spacing: -0.01em; color: var(--muted); }
 nav.tabs button[aria-current="page"] { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); color: var(--accent); }
 @media (prefers-reduced-motion: no-preference) { .bar > i { transition: width .25s; } }
 .cpl { background:none; border:0; padding:6px 0 0; font:inherit; font-size:.78rem; color:var(--accent); text-decoration:underline; cursor:pointer }
+a.btn { text-decoration: none; display: inline-block; text-align: center }
 .entry.tap { cursor:pointer } .spk { font-size:.85em; opacity:.6 }
 .entimg { display:block; max-width:100%; max-height:260px; border-radius:10px; margin-top:8px; object-fit:contain; background:#fff }
 </style>
@@ -174,6 +175,7 @@ nav.tabs button[aria-current="page"] { background: color-mix(in srgb, var(--acce
   <button data-act="tab" data-v="fiches">Fiches</button>
   <button data-act="tab" data-v="quiz">Quiz</button>
   <button data-act="tab" data-v="anglais">Anglais</button>
+  <button data-act="tab" data-v="infos">Infos</button>
   <button data-act="tab" data-v="textes">Textes</button>
   <button data-act="tab" data-v="gram">Règles</button>
 </nav>
@@ -884,6 +886,31 @@ function synHTML(q) {
   }
   return h + `</div>`;
 }
+/* ---------- Infos et vidéos (contenu.json, modifiable sans toucher à l'application) ---------- */
+let CONTENU = (() => { try { return JSON.parse(localStorage.getItem("kilari_contenu") || "null"); } catch (e) { return null; } })();
+let CLOADED = false;
+async function loadContenu() {
+  try {
+    const r = await fetch("contenu.json?t=" + Date.now(), { cache: "no-store" });
+    if (r.ok) { CONTENU = await r.json(); try { localStorage.setItem("kilari_contenu", JSON.stringify(CONTENU)); } catch (e) {} }
+  } catch (e) {}
+  CLOADED = true; if (S.tab === "infos") renderInfos();
+}
+const ytId = u => { const m = String(u || "").match(/(?:youtu\.be\/|v=|embed\/|shorts\/|live\/)([\w-]{11})/); return m ? m[1] : /^[\w-]{11}$/.test(u || "") ? u : ""; };
+function renderInfos() {
+  const c = CONTENU || {}, vids = (c.videos || []).filter(v => ytId(v.url)), news = c.actualites || [], ch = c.chaine || {};
+  document.getElementById("view").innerHTML = `<div style="display:flex;flex-direction:column;gap:12px"><h2>Infos et vidéos</h2>
+    ${ch.url ? `<a class="btn" href="${esc(ch.url)}" target="_blank" rel="noopener">Notre chaîne YouTube${ch.nom ? " : " + esc(ch.nom) : ""}</a>` : ""}
+    <h3>Vidéos</h3>
+    ${vids.length ? vids.map((v, i) => { const id = ytId(v.url); return `<div class="panel"><div class="vid" data-act="vplay" data-id="${id}" style="position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000;cursor:pointer">
+        <img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover"><span style="position:absolute;inset:0;display:grid;place-items:center;font-size:3rem;color:#fff;text-shadow:0 2px 8px #000">▶</span></div>
+        <h3>${esc(v.titre || "Vidéo")}</h3>${v.desc ? `<p class="sub" style="margin:0">${esc(v.desc)}</p>` : ""}
+        <div class="row"><a class="btn alt" href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener">Ouvrir sur YouTube</a></div></div>`; }).join("") :
+      `<div class="note">${CLOADED || CONTENU ? "Aucune vidéo pour le moment." : "Chargement…"} ${navigator.onLine === false ? "Connectez-vous à internet pour voir les vidéos." : ""}</div>`}
+    <h3>Actualités</h3>
+    ${news.length ? news.map(n => `<div class="panel"><div class="count">${esc(n.date || "")}</div><h3>${esc(n.titre || "")}</h3><p class="sub" style="margin:0;white-space:pre-line">${esc(n.texte || "")}</p>${n.lien ? `<div class="row"><a class="btn alt" href="${esc(n.lien)}" target="_blank" rel="noopener">En savoir plus</a></div>` : ""}</div>`).join("") : `<div class="note">Pas encore d'actualité.</div>`}</div>`;
+  if (!CLOADED) loadContenu();
+}
 /* ---------- Anglais : verbes irréguliers, synonymes, antonymes ---------- */
 function larOf(fr, verb) {
   const k = norm(fr).replace(/\s*\(.*\)\s*/g, "").trim();
@@ -980,7 +1007,7 @@ function renderGram() {
 function render() {
   document.querySelectorAll("nav.tabs button").forEach(b => b.toggleAttribute("aria-current", b.dataset.v === S.tab) || b.removeAttribute("aria-current"));
   document.querySelectorAll("nav.tabs button").forEach(b => { if (b.dataset.v === S.tab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
-  ({ trad: renderTraduire, mots: renderMots, fiches: renderFiches, quiz: renderQuiz, anglais: renderAnglais, textes: renderTextes, gram: renderGram, prop: renderProp })[S.tab]();
+  ({ trad: renderTraduire, mots: renderMots, fiches: renderFiches, quiz: renderQuiz, anglais: renderAnglais, infos: renderInfos, textes: renderTextes, gram: renderGram, prop: renderProp })[S.tab]();
   if (S.tab === "gram") document.getElementById("view").insertAdjacentHTML("beforeend", `<div class="panel"><h3>Confidentialité</h3><p class="sub" style="margin:0">Kilâri est gratuit, sans publicité ni compte. <a href="confidentialite.html" target="_blank" rel="noopener">Lire la politique de confidentialité</a></p></div>`);
 }
 
@@ -990,6 +1017,7 @@ document.addEventListener("click", ev => {
   if (a === "trswap") { const x = S.tf; S.tf = S.tt; S.tt = x; S.online = null; renderTraduire(); return; }
   if (a === "tronline") { onlineTr(); return; }
   if (a === "trcopy" || a === "misscopy") { copyText(a === "trcopy" ? S.lastTr : S.lastMiss.join("\n"), t); return; }
+  if (a === "vplay") { const d = t; d.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${esc(d.dataset.id)}?autoplay=1&rel=0" title="Vidéo" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`; d.removeAttribute("data-act"); return; }
   if (a === "sayen") { sayEN(t.dataset.t, t.dataset.l); return; }
   if (a === "onen") { onlineEN(t.dataset.t); return; }
   if (a === "playurl") { try { new Audio(t.dataset.u).play(); } catch (e) {} return; }

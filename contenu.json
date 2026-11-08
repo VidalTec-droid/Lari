@@ -1,0 +1,16 @@
+{
+  "chaine": { "nom": "", "url": "" },
+  "actualites": [
+    {
+      "date": "2026-11-08",
+      "titre": "Kilâri s'enrichit",
+      "texte": "Traducteur français, lari et anglais, écoute des mots au toucher, verbes irréguliers anglais avec phonétique américaine et britannique, synonymes et antonymes."
+    },
+    {
+      "date": "2026-11-06",
+      "titre": "Proposez vos mots",
+      "texte": "Vous connaissez un mot ou une expression que l'application n'a pas encore ? Utilisez « Proposer un mot », avec une image ou votre voix. Après validation, il rejoint le dictionnaire pour tous."
+    }
+  ],
+  "videos": []
+}
